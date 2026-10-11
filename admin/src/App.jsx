@@ -14,10 +14,11 @@ import Settings from "./pages/Settings";
 import Homepage from "./pages/Homepage";
 import Categories from "./pages/Categories";
 import Offers from "./pages/Offers";
+import Reviews from "./pages/Reviews";
 
 const PAGES = {
   dashboard: Dashboard, orders: Orders, products: Products, customers: Customers, messages: Messages, subscribers: Subscribers,
-  homepage: Homepage, categories: Categories, offers: Offers, settings: Settings,
+  reviews: Reviews, homepage: Homepage, categories: Categories, offers: Offers, settings: Settings,
 };
 
 function AdminApp() {

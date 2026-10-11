@@ -8,6 +8,7 @@ import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { StorefrontProvider } from "./context/StorefrontContext";
 import OfferPopup from "./components/home/OfferPopup";
+import { WhatsAppButton } from "./components/lively";
 import { ScrollToTop } from "./lib/hooks";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -27,12 +28,13 @@ import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
 function Layout() {
-  const { showAnnouncement } = useSettings();
+  const { showAnnouncement, ticker_messages } = useSettings();
+  const hasTicker = showAnnouncement || (ticker_messages || []).length > 0;
   return (
     <div className="min-h-screen flex flex-col bg-cream">
       <Navbar />
       {/* The announcement bar sits inside the fixed header, so push content down by its height. */}
-      <main className={`flex-1 ${showAnnouncement ? "pt-9" : ""}`}>
+      <main className={`flex-1 ${hasTicker ? "pt-9" : ""}`}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
@@ -52,6 +54,7 @@ function Layout() {
       </main>
       <Footer />
       <OfferPopup />
+      <WhatsAppButton />
     </div>
   );
 }

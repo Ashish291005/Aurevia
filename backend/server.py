@@ -370,6 +370,8 @@ DEFAULT_SETTINGS = {
     "instagram_url": "",
     "facebook_url": "",
     "twitter_url": "",
+    "whatsapp_number": "",
+    "ticker_messages": ["Anti-tarnish & skin-safe", "Free gift wrapping on every order", "Cash on delivery across India", "Easy 7-day returns"],
 }
 
 
@@ -384,6 +386,21 @@ class SettingsInput(BaseModel):
     instagram_url: str = Field(default="", max_length=300)
     facebook_url: str = Field(default="", max_length=300)
     twitter_url: str = Field(default="", max_length=300)
+    whatsapp_number: str = Field(default="", max_length=20)
+    ticker_messages: List[str] = Field(default_factory=list, max_length=8)
+
+    @field_validator("whatsapp_number")
+    @classmethod
+    def check_whatsapp(cls, v: str) -> str:
+        digits = re.sub(r"\D", "", v)
+        if digits and not (10 <= len(digits) <= 13):
+            raise ValueError("WhatsApp number should be 10 digits (optionally with country code 91)")
+        return digits
+
+    @field_validator("ticker_messages")
+    @classmethod
+    def clean_ticker(cls, v: List[str]) -> List[str]:
+        return [m.strip()[:80] for m in v if m.strip()]
 
     @field_validator("instagram_url", "facebook_url", "twitter_url")
     @classmethod
@@ -487,6 +504,86 @@ async def make_product_id(category: str, name: str) -> str:
 async def list_products(category: Optional[str] = None):
     query = {**PUBLIC_PRODUCTS, **({"category": category} if category else {})}
     return await db.products.find(query, {"_id": 0}).sort("created_at", 1).to_list(1000)
+
+
+# ---------- Reviews ----------
+
+class ReviewInput(BaseModel):
+    rating: int = Field(ge=1, le=5)
+    title: str = Field(default="", max_length=80)
+    body: str = Field(min_length=3, max_length=1500)
+
+
+async def refresh_rating(product_id: str):
+    reviews = await db.reviews.find({"product_id": product_id, "hidden": {"$ne": True}}, {"_id": 0, "rating": 1}).to_list(10000)
+    count = len(reviews)
+    avg = round(sum(r["rating"] for r in reviews) / count, 1) if count else 0
+    await db.products.update_one({"id": product_id}, {"$set": {"rating_avg": avg, "rating_count": count}})
+
+
+@api_router.get("/products/{product_id}/reviews")
+async def product_reviews(product_id: str):
+    return await db.reviews.find({"product_id": product_id, "hidden": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("created_at", -1).to_list(200)
+
+
+@api_router.post("/products/{product_id}/reviews", status_code=201)
+async def add_review(product_id: str, input_data: ReviewInput, request: Request):
+    user = await get_current_user(request)
+    product = await db.products.find_one({"id": product_id, **PUBLIC_PRODUCTS}, {"_id": 0, "id": 1, "name": 1})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    uid = str(user["_id"])
+    bought = await db.orders.find_one({"items.product_id": product_id, "status": {"$ne": "cancelled"},
+                                       "$or": [{"user_id": uid}, {"customer.email": user["email"]}]}, {"_id": 1})
+    ts = now_iso()
+    doc = {"product_id": product_id, "product_name": product["name"], "user_id": uid, "name": user.get("name") or "Customer",
+           "rating": input_data.rating, "title": input_data.title.strip(), "body": input_data.body.strip(),
+           "verified": bool(bought), "updated_at": ts}
+    existing = await db.reviews.find_one({"product_id": product_id, "user_id": uid}, {"_id": 0, "id": 1})
+    if existing:
+        await db.reviews.update_one({"id": existing["id"]}, {"$set": doc})
+        doc["id"] = existing["id"]
+    else:
+        doc.update({"id": uuid.uuid4().hex, "created_at": ts, "hidden": False})
+        await db.reviews.insert_one(doc)
+    await refresh_rating(product_id)
+    doc.pop("_id", None)
+    doc.pop("user_id", None)
+    return doc
+
+
+@api_router.get("/reviews/latest")
+async def latest_reviews():
+    return await db.reviews.find({"hidden": {"$ne": True}, "rating": {"$gte": 4}}, {"_id": 0, "user_id": 0}).sort("created_at", -1).to_list(9)
+
+
+@api_router.get("/admin/reviews")
+async def admin_reviews(admin: dict = Depends(require_admin)):
+    return await db.reviews.find({}, {"_id": 0, "user_id": 0}).sort("created_at", -1).to_list(2000)
+
+
+class ReviewModerationInput(BaseModel):
+    hidden: bool
+
+
+@api_router.patch("/admin/reviews/{review_id}")
+async def moderate_review(review_id: str, input_data: ReviewModerationInput, admin: dict = Depends(require_admin)):
+    review = await db.reviews.find_one({"id": review_id}, {"_id": 0})
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    await db.reviews.update_one({"id": review_id}, {"$set": {"hidden": input_data.hidden}})
+    await refresh_rating(review["product_id"])
+    return {"message": "Review hidden" if input_data.hidden else "Review visible"}
+
+
+@api_router.delete("/admin/reviews/{review_id}")
+async def delete_review(review_id: str, admin: dict = Depends(require_admin)):
+    review = await db.reviews.find_one({"id": review_id}, {"_id": 0})
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    await db.reviews.delete_one({"id": review_id})
+    await refresh_rating(review["product_id"])
+    return {"message": "Review deleted"}
 
 
 @api_router.get("/products/{product_id}")
@@ -599,6 +696,18 @@ class OfferInput(BaseModel):
     show_popup: bool = False
     show_banner: bool = True
     active: bool = True
+    ends_at: Optional[str] = Field(default=None, max_length=40)
+
+    @field_validator("ends_at")
+    @classmethod
+    def check_ends_at(cls, v: Optional[str]) -> Optional[str]:
+        if not v:
+            return None
+        try:
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        except ValueError:
+            raise ValueError("End date must be a valid date and time")
+        return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).astimezone(timezone.utc).isoformat()
 
     @field_validator("code")
     @classmethod
@@ -630,8 +739,15 @@ CONTENT = {
 }
 
 
+def offer_expired(o: dict) -> bool:
+    return bool(o.get("ends_at")) and o["ends_at"] <= now_iso()
+
+
 async def list_content(kind: str, only_active: bool = False) -> List[dict]:
-    return await db[kind].find({"active": True} if only_active else {}, {"_id": 0}).sort("position", 1).to_list(500)
+    items = await db[kind].find({"active": True} if only_active else {}, {"_id": 0}).sort("position", 1).to_list(500)
+    if only_active and kind == "offers":
+        items = [o for o in items if not offer_expired(o)]
+    return items
 
 
 async def prepare_content(kind: str, data: BaseModel, current: Optional[dict] = None) -> dict:
@@ -727,7 +843,7 @@ class CouponInput(BaseModel):
 
 async def find_coupon(code: str) -> dict:
     offer = await db.offers.find_one({"code": code.strip().upper(), "active": True}, {"_id": 0})
-    if not offer:
+    if not offer or offer_expired(offer):
         raise HTTPException(status_code=400, detail="This coupon code isn't valid or has expired.")
     return offer
 
@@ -1241,7 +1357,7 @@ async def seed_storefront():
             dict(title="10% off your first order", description="New here? Use code WELCOME10 on orders above ₹499.", code="WELCOME10",
                  discount_type="percent", discount_value=10, min_order=499, image=media["for"]["her"], cta_text="Start Shopping", cta_link="/shop", show_popup=True, show_banner=True),
             dict(title="Flat ₹200 off on gift boxes & more", description="On orders above ₹1,999 with code GIFT200, made for festive gifting.", code="GIFT200",
-                 discount_type="flat", discount_value=200, min_order=1999, image="", cta_text="Shop Gift Boxes", cta_link="/shop?category=Gift%20Boxes", show_popup=False, show_banner=True),
+                 discount_type="flat", discount_value=200, min_order=1999, image="", cta_text="Shop Gift Boxes", cta_link="/shop?category=Gift%20Boxes", show_popup=False, show_banner=True, ends_at=(now_utc() + timedelta(days=5)).isoformat()),
             dict(title="Free gift wrapping on every order", description="Every piece arrives in our signature box with a handwritten note card.", code="",
                  discount_type="none", discount_value=0, min_order=0, image="", cta_text="Find a Gift", cta_link="/shop?for=her", show_popup=False, show_banner=True),
         ]

@@ -25,8 +25,9 @@ const navLinks = [
 
 function CountBadge({ count, testId }) {
   if (!count) return null;
+  // Re-keyed on every change so the bump animation replays when items are added.
   return (
-    <span data-testid={testId} className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-burgundy text-white text-[10px] font-bold">
+    <span key={count} data-testid={testId} className="animate-bump absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 flex items-center justify-center rounded-full bg-rose text-white text-[10px] font-bold">
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -39,7 +40,8 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { totalItems } = useCart();
   const { count: wishlistCount } = useWishlist();
-  const { showAnnouncement, announcement_text } = useSettings();
+  const { showAnnouncement, announcement_text, ticker_messages } = useSettings();
+  const tickerItems = [showAnnouncement && announcement_text, ...(ticker_messages || [])].filter(Boolean);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -71,9 +73,20 @@ export default function Navbar() {
 
   return (
     <header data-testid="navbar" className="fixed top-0 left-0 right-0 z-50">
-      {showAnnouncement && (
-        <div data-testid="announcement-bar" className="h-9 bg-burgundy text-white flex items-center justify-center px-4">
-          <p className="text-[11px] sm:text-xs tracking-[0.15em] uppercase font-body truncate">{announcement_text}</p>
+      {tickerItems.length > 0 && (
+        <div data-testid="announcement-bar" className="h-9 bg-gradient-to-r from-burgundy via-[#6b1d33] to-burgundy text-white overflow-hidden flex items-center">
+          {/* Two identical halves scroll by 50% for a seamless loop. */}
+          <div className="flex w-max animate-marquee" aria-label={tickerItems.join(". ")}>
+            {[0, 1].map(half => (
+              <div key={half} className="flex shrink-0" aria-hidden={half === 1}>
+                {[...tickerItems, ...tickerItems].map((t, i) => (
+                  <span key={i} className="px-8 text-[11px] sm:text-xs tracking-[0.15em] uppercase font-body whitespace-nowrap">
+                    <span className="text-gold mr-8">✦</span>{t}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <div className={`transition-all duration-300 ${scrolled ? "bg-white/95 backdrop-blur-xl shadow-sm" : "bg-white/80 backdrop-blur-md"}`}>

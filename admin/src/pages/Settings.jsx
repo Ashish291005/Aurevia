@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Save, Megaphone, Truck, Store, Share2, KeyRound } from "lucide-react";
+import { Save, Megaphone, Truck, Store, Share2, KeyRound, MessageCircle, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { api, apiError, STORE_URL } from "../lib/api";
 import { money } from "../lib/format";
@@ -122,6 +122,26 @@ export default function Settings() {
               </div>
             </div>
           )}
+        </Section>
+
+        <Section icon={Megaphone} title="Scrolling ticker" description="Short messages that scroll in the top bar, after the announcement above.">
+          <div className="space-y-2">
+            {(form.ticker_messages || []).map((m, i) => (
+              <div key={i} className="flex gap-2">
+                <Input value={m} maxLength={80} onChange={e => setForm(f => ({ ...f, ticker_messages: f.ticker_messages.map((x, j) => (j === i ? e.target.value : x)) }))} className="rounded-md" />
+                <Button type="button" variant="ghost" onClick={() => setForm(f => ({ ...f, ticker_messages: f.ticker_messages.filter((_, j) => j !== i) }))} aria-label="Remove message"><X className="w-4 h-4" /></Button>
+              </div>
+            ))}
+            {(form.ticker_messages || []).length < 8 && (
+              <Button type="button" variant="secondary" onClick={() => setForm(f => ({ ...f, ticker_messages: [...(f.ticker_messages || []), ""] }))}><Plus className="w-4 h-4" /> Add message</Button>
+            )}
+          </div>
+        </Section>
+
+        <Section icon={MessageCircle} title="WhatsApp chat" description="Shows a floating WhatsApp button on every storefront page. Leave empty to hide it.">
+          <Field label="WhatsApp number" hint="10-digit mobile number; +91 is added automatically">
+            <Input value={form.whatsapp_number || ""} onChange={set("whatsapp_number")} placeholder="98765 43210" maxLength={20} className="rounded-md max-w-xs" data-testid="settings-whatsapp" />
+          </Field>
         </Section>
 
         <Section icon={Truck} title="Shipping" description="Used for cart totals and charged on every new order.">

@@ -8,8 +8,17 @@ import ImageField from "../components/ImageField";
 import LinkField from "../components/LinkField";
 import RowActions from "../components/ContentRow";
 
-const FIELDS = ["title", "description", "code", "discount_type", "discount_value", "min_order", "image", "cta_text", "cta_link", "show_popup", "show_banner"];
-const EMPTY = { title: "", description: "", code: "", discount_type: "percent", discount_value: 10, min_order: 0, image: "", cta_text: "Shop Now", cta_link: "/shop", show_popup: false, show_banner: true, active: true };
+const FIELDS = ["title", "description", "code", "discount_type", "discount_value", "min_order", "image", "cta_text", "cta_link", "show_popup", "show_banner", "ends_at"];
+
+// <input type="datetime-local"> works in local time; the API stores UTC ISO strings.
+const toLocalInput = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+const fromLocalInput = (v) => (v ? new Date(v).toISOString() : null);
+const isExpired = (o) => o.ends_at && new Date(o.ends_at) <= new Date();
+const EMPTY = { title: "", description: "", code: "", discount_type: "percent", discount_value: 10, min_order: 0, image: "", cta_text: "Shop Now", cta_link: "/shop", show_popup: false, show_banner: true, active: true, ends_at: null };
 
 export const discountLabel = (o) => {
   if (!o.code) return "Announcement only (no code)";
@@ -40,6 +49,7 @@ export default function Offers() {
     const payload = {
       ...Object.fromEntries(FIELDS.map(f => [f, form[f]])),
       active: form.active,
+      ends_at: form.ends_at || null,
       code: hasCode ? form.code.trim().toUpperCase() : "",
       discount_type: hasCode ? form.discount_type : "none",
       discount_value: hasCode ? Number(form.discount_value) || 0 : 0,
@@ -94,6 +104,7 @@ export default function Offers() {
                     {o.show_popup && <span className="px-2 py-0.5 rounded-full bg-gold/15 text-[#7a5d22] text-[11px] font-medium">Popup</span>}
                     {o.show_banner && <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 text-[11px] font-medium">Banner</span>}
                     {!o.active && <span className="text-xs text-stone-400">Hidden</span>}
+                    {o.ends_at && <span className={`text-[11px] ${isExpired(o) ? "text-red-700" : "text-stone-500"}`}>{isExpired(o) ? "Expired" : `Ends ${new Date(o.ends_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`}</span>}
                   </div>
                   <p className="text-sm text-stone-500 mt-0.5">{discountLabel(o)}</p>
                 </div>
@@ -144,6 +155,14 @@ export default function Offers() {
               <Input value={form.cta_text} onChange={set("cta_text")} maxLength={30} className="rounded-md" /></label>
             <div className="sm:col-span-2"><Label>Button link</Label><LinkField value={form.cta_link} onChange={set("cta_link")} /></div>
           </div>
+
+          <label className="block">
+            <Label hint="optional · shows a live countdown; the offer and its code stop automatically">Ends at</Label>
+            <div className="flex gap-2">
+              <Input type="datetime-local" value={toLocalInput(form.ends_at)} onChange={e => setForm(f => ({ ...f, ends_at: fromLocalInput(e.target.value) }))} className="rounded-md max-w-xs" data-testid="offer-ends-at" />
+              {form.ends_at && <Button type="button" variant="ghost" onClick={() => setForm(f => ({ ...f, ends_at: null }))}>No end date</Button>}
+            </div>
+          </label>
 
           <div>
             <Label hint="optional, used in the popup">Image</Label>

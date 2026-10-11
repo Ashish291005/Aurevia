@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard, ShoppingCart, Package, Users, MessageSquare, Mail, Settings, LogOut, Store, Menu, X, Database,
-  Images, LayoutGrid, BadgePercent,
+  Images, LayoutGrid, BadgePercent, Star,
 } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import { useAdminData } from "../AdminData";
@@ -12,6 +12,7 @@ export const NAV = [
   { page: "orders", label: "Orders", Icon: ShoppingCart, badge: s => s?.open_orders },
   { page: "products", label: "Products", Icon: Package },
   { page: "customers", label: "Customers", Icon: Users },
+  { page: "reviews", label: "Reviews", Icon: Star },
   { page: "messages", label: "Messages", Icon: MessageSquare, badge: s => s?.unread_messages },
   { page: "subscribers", label: "Subscribers", Icon: Mail },
   { page: "homepage", label: "Homepage carousel", Icon: Images, group: "Storefront" },

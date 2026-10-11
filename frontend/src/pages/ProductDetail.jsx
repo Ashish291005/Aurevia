@@ -8,6 +8,8 @@ import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useSettings } from "../context/SettingsContext";
 import ProductCard, { PriceTag } from "../components/ProductCard";
+import Reviews from "../components/Reviews";
+import { Stars } from "../components/Stars";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 import { Separator } from "../components/ui/separator";
 import { imageUrl } from "../lib/api";
@@ -103,9 +105,14 @@ function ProductView({ product }) {
               ))}
             </div>
             <h1 data-testid="product-name" className="font-heading text-3xl sm:text-4xl text-stone-900 tracking-tight mb-3">{product.name}</h1>
+            {product.rating_count > 0 && (
+              <a href="#reviews" className="inline-flex items-center gap-2 mb-3 text-sm font-body text-stone-600 hover:text-burgundy">
+                <Stars value={product.rating_avg} /> {product.rating_avg} · {product.rating_count} {product.rating_count === 1 ? "review" : "reviews"}
+              </a>
+            )}
             <div data-testid="product-price" className="text-2xl font-heading text-gold mb-2">
               <PriceTag product={product} />
-              {onSale && <span className="ml-3 align-middle text-xs font-body font-semibold text-burgundy">Save {formatPrice(product.compare_at_price - product.price)}</span>}
+              {onSale && <span className="ml-3 align-middle text-xs font-body font-semibold text-emerald-700">You save {formatPrice(product.compare_at_price - product.price)}</span>}
             </div>
             <p data-testid="product-stock" className={`text-xs tracking-wider uppercase font-body font-semibold mb-6 ${soldOut ? "text-red-700" : stock <= 5 ? "text-amber-700" : "text-emerald-700"}`}>
               {soldOut ? "Out of stock" : stock <= 5 ? `Only ${stock} left` : "In stock"}
@@ -138,19 +145,19 @@ function ProductView({ product }) {
 
             <div className="flex gap-3 mb-3">
               <button data-testid="add-to-cart-btn" onClick={() => handleAddToCart(false)} disabled={soldOut || canAdd === 0}
-                className="flex-1 flex items-center justify-center gap-3 bg-burgundy text-white py-4 text-xs tracking-[0.2em] uppercase font-body font-semibold hover:bg-burgundy-dark transition-colors disabled:bg-stone-400 disabled:cursor-not-allowed">
+                className="flex-1 flex items-center justify-center gap-3 rounded-full bg-burgundy text-white py-4 text-xs tracking-[0.2em] uppercase font-body font-semibold hover:bg-burgundy-dark transition-colors disabled:bg-stone-400 disabled:cursor-not-allowed">
                 <ShoppingBag className="w-4 h-4" /> {soldOut ? "Sold Out" : canAdd === 0 ? "All in Cart" : "Add to Cart"}
               </button>
               <button data-testid="product-wishlist-btn" aria-pressed={saved}
                 onClick={() => toast.success(wishlist.toggle(product.id) ? "Saved to wishlist" : "Removed from wishlist")}
-                className={`w-14 flex items-center justify-center border transition-colors ${saved ? "border-burgundy text-burgundy" : "border-stone-300 text-stone-600 hover:border-gold hover:text-gold"}`}
+                className={`w-14 flex items-center justify-center rounded-full border transition-colors ${saved ? "border-burgundy text-burgundy" : "border-stone-300 text-stone-600 hover:border-gold hover:text-gold"}`}
                 aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}>
                 <Heart className={`w-5 h-5 ${saved ? "fill-burgundy" : ""}`} />
               </button>
             </div>
             {!soldOut && canAdd > 0 && (
               <button data-testid="buy-now-btn" onClick={() => handleAddToCart(true)}
-                className="w-full mb-10 border border-burgundy text-burgundy py-4 text-xs tracking-[0.2em] uppercase font-body font-semibold hover:bg-burgundy hover:text-white transition-colors">
+                className="w-full mb-10 rounded-full border border-burgundy text-burgundy py-4 text-xs tracking-[0.2em] uppercase font-body font-semibold hover:bg-burgundy hover:text-white transition-colors">
                 Buy Now
               </button>
             )}
@@ -190,6 +197,8 @@ function ProductView({ product }) {
             </Accordion>
           </motion.div>
         </div>
+
+        <Reviews productId={product.id} />
 
         {related.length > 0 && (
           <section className="mt-24" data-testid="related-products">

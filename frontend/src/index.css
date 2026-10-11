@@ -94,8 +94,23 @@
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.animate-marquee { animation: marquee 32s linear infinite; }
+.animate-marquee:hover { animation-play-state: paused; }
+
+@keyframes heartPop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.animate-heart { animation: heartPop .4s ease-out; }
+
+@keyframes badgeBump { 0% { transform: scale(1); } 30% { transform: scale(1.45); } 60% { transform: scale(.9); } 100% { transform: scale(1); } }
+.animate-bump { animation: badgeBump .5s ease-out; }
+
+@keyframes floatIn { from { opacity: 0; transform: translateY(16px) scale(.9); } to { opacity: 1; transform: none; } }
+
+.story-ring { background: conic-gradient(from 210deg, #D9718A, #C5A059, #F3C4CF, #D9718A); }
+
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    .animate-marquee { animation: none; }
 }
 
 ::selection {

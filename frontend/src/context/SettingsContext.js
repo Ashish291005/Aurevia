@@ -12,6 +12,8 @@ const DEFAULTS = {
   instagram_url: "",
   facebook_url: "",
   twitter_url: "",
+  whatsapp_number: "",
+  ticker_messages: [],
 };
 
 const SettingsContext = createContext(DEFAULTS);

@@ -1,20 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Star, Send, ShieldCheck, Gift, Truck, RotateCcw, Banknote } from "lucide-react";
+import { ArrowRight, Send, ShieldCheck, Gift, Truck, RotateCcw, Banknote } from "lucide-react";
 import { toast } from "sonner";
-import ProductCard from "../components/ProductCard";
 import HeroCarousel from "../components/home/HeroCarousel";
 import CategoryTiles from "../components/home/CategoryTiles";
 import OfferBanner from "../components/home/OfferBanner";
 import ShopForTiles from "../components/home/ShopForTiles";
-import { testimonials } from "../data/products";
 import { useProducts } from "../context/ProductsContext";
 import { useStorefront } from "../context/StorefrontContext";
 import { useSettings } from "../context/SettingsContext";
 import { api, apiError } from "../lib/api";
 import { formatPrice } from "../lib/format";
 import { usePageTitle } from "../lib/hooks";
+import { ProductRow, Stars } from "../components/lively";
+import { BadgeCheck } from "lucide-react";
 
 const CRAFT_IMG = "https://images.unsplash.com/photo-1620656798579-1984d9e87df7?w=1200&q=80";
 const fadeUp = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.5 } };
@@ -27,19 +27,6 @@ function SectionHeading({ eyebrow, title, link, linkLabel = "View all" }) {
         <h2 className="font-heading text-3xl sm:text-4xl text-stone-900">{title}</h2>
       </div>
       {link && <Link to={link} className="shrink-0 gold-underline text-xs tracking-[0.15em] uppercase font-body text-stone-600 hover:text-burgundy">{linkLabel}</Link>}
-    </div>
-  );
-}
-
-function ProductRow({ products }) {
-  // Left-to-right row of compact cards; scrolls sideways on smaller screens.
-  return (
-    <div className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
-      {products.map(p => (
-        <div key={p.id} className="snap-start shrink-0 w-[44%] sm:w-[30%] lg:w-[23%]">
-          <ProductCard product={p} />
-        </div>
-      ))}
     </div>
   );
 }
@@ -98,24 +85,31 @@ function BrandStory() {
   );
 }
 
-function Testimonials() {
+function CustomerReviews() {
+  const [reviews, setReviews] = useState([]);
+  useEffect(() => {
+    api.get("/reviews/latest").then(r => setReviews(r.data)).catch(() => {});
+  }, []);
+  // Only genuine reviews from customers are shown; the section stays hidden until there are some.
+  if (!reviews.length) return null;
   return (
-    <section className="py-16 sm:py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8">
-        <div className="text-center mb-12">
-          <p className="text-[11px] tracking-[0.2em] uppercase font-semibold text-gold font-body">Loved across India</p>
+    <section data-testid="customer-reviews" className="py-16 sm:py-20 bg-petal">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8">
+        <div className="text-center mb-10">
+          <p className="text-[11px] tracking-[0.2em] uppercase font-semibold text-gold font-body">Real reviews</p>
           <h2 className="font-heading text-3xl sm:text-4xl text-stone-900">What our customers say</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((t, i) => (
-            <motion.div key={t.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="text-center px-6 py-9 rounded-2xl border border-stone-200 bg-cream">
-              <div className="flex justify-center gap-1 mb-4">
-                {Array.from({ length: t.rating }).map((_, idx) => <Star key={idx} className="w-4 h-4 fill-gold text-gold" />)}
+        <div className="flex gap-4 sm:gap-6 overflow-x-auto snap-x pb-2 scrollbar-none">
+          {reviews.map((r) => (
+            <Link key={r.id} to={`/product/${r.product_id}`} className="snap-start shrink-0 w-[80%] sm:w-[45%] lg:w-[31%] rounded-2xl bg-white p-6 ring-1 ring-stone-200/70 hover:shadow-lg transition-shadow">
+              <Stars value={r.rating} />
+              {r.title && <p className="font-body font-semibold text-stone-900 mt-3">{r.title}</p>}
+              <p className="font-body text-sm text-stone-600 mt-2 line-clamp-4">{r.body}</p>
+              <div className="flex items-center justify-between gap-2 mt-4 text-xs font-body">
+                <span className="text-stone-800 font-semibold flex items-center gap-1">{r.name}{r.verified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" aria-label="Verified buyer" />}</span>
+                <span className="text-stone-400 truncate">on {r.product_name}</span>
               </div>
-              <p className="font-heading text-lg italic text-stone-700 mb-5 leading-relaxed">"{t.text}"</p>
-              <p className="text-xs tracking-[0.15em] uppercase font-body font-semibold text-stone-500">{t.name}</p>
-            </motion.div>
+            </Link>
           ))}
         </div>
       </div>
@@ -165,6 +159,8 @@ export default function Home() {
   usePageTitle(null);
 
   const bestsellers = getBestsellers().slice(0, 8);
+  const newArrivals = [...products].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")).slice(0, 10);
+  const onSale = products.filter(p => p.compare_at_price > p.price && p.stock !== 0).slice(0, 10);
   const giftBoxes = products.filter(p => p.category === "Gift Boxes");
   const underBudget = products.filter(p => p.price < 1000 && p.stock !== 0).slice(0, 8);
   // Spread the admin's banner offers through the page, cycling if there are fewer banners than slots.
@@ -181,10 +177,17 @@ export default function Home() {
       {bestsellers.length > 0 && (
         <section data-testid="bestsellers-section" className="py-14 sm:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
-            <SectionHeading eyebrow="Most loved" title="Bestsellers" link="/shop" />
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-10">
-              {bestsellers.map(p => <ProductCard key={p.id} product={p} />)}
-            </div>
+            <SectionHeading eyebrow="Most loved" title="Trending now" link="/shop" />
+            <ProductRow products={bestsellers} testId="trending-row" />
+          </div>
+        </section>
+      )}
+
+      {newArrivals.length > 0 && (
+        <section data-testid="new-arrivals-section" className="py-14 sm:py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8">
+            <SectionHeading eyebrow="Just dropped" title="New arrivals" link="/shop?sort=newest" />
+            <ProductRow products={newArrivals} testId="new-row" />
           </div>
         </section>
       )}
@@ -201,6 +204,15 @@ export default function Home() {
         </section>
       )}
 
+      {onSale.length > 0 && (
+        <section data-testid="sale-section" className="py-14 sm:py-20 bg-gradient-to-b from-petal to-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8">
+            <SectionHeading eyebrow="Limited time" title="Deals you'll love" link="/shop?sale=1" />
+            <ProductRow products={onSale} testId="sale-row" />
+          </div>
+        </section>
+      )}
+
       {underBudget.length > 0 && (
         <section data-testid="under-budget-section" className="py-14 sm:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
@@ -212,7 +224,7 @@ export default function Home() {
 
       <BrandStory />
       {bannerSlots > 2 && <OfferBanner offer={banner(2)} variant={2} />}
-      <Testimonials />
+      <CustomerReviews />
       <Newsletter />
     </div>
   );

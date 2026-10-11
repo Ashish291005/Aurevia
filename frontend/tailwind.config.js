@@ -27,6 +27,8 @@ module.exports = {
                         },
                         cream: '#FCFCFA',
                         blush: '#F7ECE8',
+                        petal: '#FCEEF1',
+                        rose: { DEFAULT: '#D9718A', dark: '#B8566F' },
                         background: 'hsl(var(--background))',
                         foreground: 'hsl(var(--foreground))',
                         card: {
