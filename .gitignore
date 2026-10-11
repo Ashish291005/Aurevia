@@ -1,0 +1,24 @@
+# Dependencies & builds
+node_modules/
+build/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets — never commit real environment files
+.env
+.env.*
+!.env.example
+
+# Runtime data
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Local tooling
+.claude/
+.DS_Store
+*.log

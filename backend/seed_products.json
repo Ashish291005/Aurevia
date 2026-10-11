@@ -1,0 +1,594 @@
+[
+  {
+    "id": "ring-001",
+    "name": "Eternal Glow Band",
+    "price": 649,
+    "compare_at_price": 899,
+    "category": "Rings",
+    "description": "A sleek everyday band with a mirror-polish finish. Anti-tarnish coated and nickel-free, so it stays bright and gentle on skin.",
+    "images": [
+      "https://images.unsplash.com/photo-1708222169741-dc9616cfdb83?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHw0fHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000",
+      "https://images.unsplash.com/photo-1708222169835-6329be77bee6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-plated",
+      "Rose gold-plated"
+    ],
+    "sizes": [
+      "Adjustable"
+    ],
+    "bestseller": true,
+    "stock": 40,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "ring-002",
+    "name": "Solitaire Sparkle Ring",
+    "price": 799,
+    "compare_at_price": null,
+    "category": "Rings",
+    "description": "A brilliant-cut American Diamond (AD) stones solitaire on a slim band — all the sparkle of a classic engagement ring at a fraction of the price.",
+    "images": [
+      "https://images.unsplash.com/photo-1708222169835-6329be77bee6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000",
+      "https://images.unsplash.com/photo-1708222169741-dc9616cfdb83?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHw0fHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-plated",
+      "Silver-tone"
+    ],
+    "sizes": [
+      "Adjustable"
+    ],
+    "bestseller": false,
+    "stock": 35,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "ring-003",
+    "name": "Blush Halo Ring",
+    "price": 699,
+    "compare_at_price": 999,
+    "category": "Rings",
+    "description": "A pink crystal framed by a halo of tiny AD stones. A sweet pick for birthdays and anniversaries.",
+    "images": [
+      "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=1000&q=80",
+      "https://images.unsplash.com/photo-1708222169741-dc9616cfdb83?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHw0fHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Rose gold-plated",
+      "Gold-plated"
+    ],
+    "sizes": [
+      "Adjustable"
+    ],
+    "bestseller": false,
+    "stock": 25,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "ring-004",
+    "name": "Stackable Charm Rings (Set of 3)",
+    "price": 899,
+    "compare_at_price": null,
+    "category": "Rings",
+    "description": "Three dainty rings with gemstone-look accents, made to be worn together or apart.",
+    "images": [
+      "https://images.unsplash.com/photo-1608042314453-ae338d80c427?w=1000&q=80",
+      "https://images.unsplash.com/photo-1708222169835-6329be77bee6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-plated"
+    ],
+    "sizes": [
+      "Adjustable"
+    ],
+    "bestseller": true,
+    "stock": 30,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "ring-005",
+    "name": "Promise Couple Rings (Pair)",
+    "price": 1299,
+    "compare_at_price": 1599,
+    "category": "Rings",
+    "description": "A matching pair of comfort-fit bands — one for you, one for them. Comes in a twin ring box.",
+    "images": [
+      "https://images.unsplash.com/photo-1622398925373-3f91b1e275f5?w=1000&q=80",
+      "https://images.unsplash.com/photo-1627293509201-cd0c780043e6?w=1000&q=80"
+    ],
+    "materials": [
+      "Gold-plated",
+      "Two-tone"
+    ],
+    "sizes": [
+      "Adjustable"
+    ],
+    "bestseller": true,
+    "stock": 20,
+    "recipients": [
+      "couples"
+    ]
+  },
+  {
+    "id": "ring-006",
+    "name": "Bloom Cocktail Ring",
+    "price": 999,
+    "compare_at_price": null,
+    "category": "Rings",
+    "description": "A statement flower ring with violet and citrine crystals. Made for festive evenings.",
+    "images": [
+      "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=1000&q=80",
+      "https://images.unsplash.com/photo-1708222169741-dc9616cfdb83?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHw0fHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Silver-tone"
+    ],
+    "sizes": [
+      "Adjustable"
+    ],
+    "bestseller": false,
+    "stock": 15,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "necklace-001",
+    "name": "Pearl Drop Pendant",
+    "price": 999,
+    "compare_at_price": null,
+    "category": "Necklaces",
+    "description": "A lustrous faux pearl on a fine gold-plated chain. Understated elegance for office or evening.",
+    "images": [
+      "https://images.unsplash.com/photo-1744369382892-eb5b6a2fdc6f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwzfHxlbGVnYW50JTIwd29tYW4lMjBkaWFtb25kJTIwbmVja2xhY2UlMjBsdXh1cnl8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000",
+      "https://images.unsplash.com/photo-1513122991877-4a5678e6d72f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzh8MHwxfHNlYXJjaHw0fHxsdXh1cnklMjBnb2xkJTIwbmVja2xhY2UlMjBqZXdlbHJ5JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-plated",
+      "Silver-tone"
+    ],
+    "sizes": [
+      "16 inch",
+      "18 inch"
+    ],
+    "bestseller": true,
+    "stock": 30,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "necklace-002",
+    "name": "Heart Sparkle Pendant",
+    "price": 849,
+    "compare_at_price": 1199,
+    "category": "Necklaces",
+    "description": "An open heart outlined in AD stones — a timeless way to say 'I love you'.",
+    "images": [
+      "https://images.unsplash.com/photo-1588444837495-c6cfeb53f32d?w=1000&q=80",
+      "https://images.unsplash.com/photo-1744369382892-eb5b6a2fdc6f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwzfHxlbGVnYW50JTIwd29tYW4lMjBkaWFtb25kJTIwbmVja2xhY2UlMjBsdXh1cnl8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Silver-tone",
+      "Rose gold-plated"
+    ],
+    "sizes": [
+      "16 inch",
+      "18 inch"
+    ],
+    "bestseller": true,
+    "stock": 40,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "necklace-003",
+    "name": "Layered Lariat Necklace",
+    "price": 1199,
+    "compare_at_price": null,
+    "category": "Necklaces",
+    "description": "Two delicate chains with a crescent and crystal charm, pre-layered for an effortless look.",
+    "images": [
+      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1000&q=80",
+      "https://images.unsplash.com/photo-1702476320482-0736c4b962f5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzh8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjBnb2xkJTIwbmVja2xhY2UlMjBqZXdlbHJ5JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-plated"
+    ],
+    "sizes": [
+      "Adjustable"
+    ],
+    "bestseller": false,
+    "stock": 25,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "necklace-004",
+    "name": "Royal Kundan Necklace Set",
+    "price": 2499,
+    "compare_at_price": 3299,
+    "category": "Necklaces",
+    "description": "A temple-style kundan choker with matching earrings. Perfect for weddings, festivals and sangeet nights.",
+    "images": [
+      "https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?w=1000&q=80",
+      "https://images.unsplash.com/photo-1513122991877-4a5678e6d72f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzh8MHwxfHNlYXJjaHw0fHxsdXh1cnklMjBnb2xkJTIwbmVja2xhY2UlMjBqZXdlbHJ5JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Antique gold-plated"
+    ],
+    "sizes": [
+      "Adjustable"
+    ],
+    "bestseller": true,
+    "stock": 12,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "necklace-005",
+    "name": "AD Tennis Necklace",
+    "price": 1499,
+    "compare_at_price": null,
+    "category": "Necklaces",
+    "description": "A continuous line of American Diamond stones that catches every light. Red-carpet ready.",
+    "images": [
+      "https://images.unsplash.com/photo-1513122991877-4a5678e6d72f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzh8MHwxfHNlYXJjaHw0fHxsdXh1cnklMjBnb2xkJTIwbmVja2xhY2UlMjBqZXdlbHJ5JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000",
+      "https://images.unsplash.com/photo-1702476320482-0736c4b962f5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzh8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjBnb2xkJTIwbmVja2xhY2UlMjBqZXdlbHJ5JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Silver-tone",
+      "Gold-plated"
+    ],
+    "sizes": [
+      "16 inch"
+    ],
+    "bestseller": false,
+    "stock": 18,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "earring-001",
+    "name": "Crystal Stud Earrings",
+    "price": 449,
+    "compare_at_price": null,
+    "category": "Earrings",
+    "description": "Classic AD studs with secure push-backs. The everyday pair everyone needs.",
+    "images": [
+      "https://images.unsplash.com/photo-1769151591224-2eee6793b885?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwzfHxkaWFtb25kJTIwZWFycmluZ3MlMjBsdXh1cnklMjBnb2xkfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000",
+      "https://images.unsplash.com/photo-1771173652661-8245a9d94095?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwyfHxkaWFtb25kJTIwZWFycmluZ3MlMjBsdXh1cnklMjBnb2xkfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-plated",
+      "Silver-tone"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "bestseller": true,
+    "stock": 60,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "earring-002",
+    "name": "Golden Hoop Earrings",
+    "price": 599,
+    "compare_at_price": null,
+    "category": "Earrings",
+    "description": "Lightweight polished hoops that go with everything, from jeans to sarees.",
+    "images": [
+      "https://images.unsplash.com/photo-1617038220319-276d3cfab638?w=1000&q=80",
+      "https://images.unsplash.com/photo-1771173652661-8245a9d94095?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwyfHxkaWFtb25kJTIwZWFycmluZ3MlMjBsdXh1cnklMjBnb2xkfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-plated"
+    ],
+    "sizes": [
+      "Small",
+      "Medium"
+    ],
+    "bestseller": false,
+    "stock": 45,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "earring-003",
+    "name": "Sapphire Drop Earrings",
+    "price": 1099,
+    "compare_at_price": 1399,
+    "category": "Earrings",
+    "description": "Blue crystal drops framed in sparkling stones. A showstopper for parties and receptions.",
+    "images": [
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=1000&q=80",
+      "https://images.unsplash.com/photo-1769151591224-2eee6793b885?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwzfHxkaWFtb25kJTIwZWFycmluZ3MlMjBsdXh1cnklMjBnb2xkfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Silver-tone"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "bestseller": false,
+    "stock": 20,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "earring-004",
+    "name": "Heart Drop Earrings",
+    "price": 549,
+    "compare_at_price": null,
+    "category": "Earrings",
+    "description": "Tiny blue crystal hearts on hook backs — playful, pretty and very giftable.",
+    "images": [
+      "https://images.unsplash.com/photo-1630019852942-f89202989a59?w=1000&q=80",
+      "https://images.unsplash.com/photo-1769151591224-2eee6793b885?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwzfHxkaWFtb25kJTIwZWFycmluZ3MlMjBsdXh1cnklMjBnb2xkfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-plated"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "bestseller": false,
+    "stock": 35,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "earring-005",
+    "name": "Twisted Rope Hoops",
+    "price": 649,
+    "compare_at_price": null,
+    "category": "Earrings",
+    "description": "Chunky twisted hoops with a modern edge. Hypoallergenic posts for sensitive ears.",
+    "images": [
+      "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=1000&q=80",
+      "https://images.unsplash.com/photo-1617038220319-276d3cfab638?w=1000&q=80"
+    ],
+    "materials": [
+      "Gold-plated"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "bestseller": false,
+    "stock": 30,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "bracelet-001",
+    "name": "Classic Kada Bangle",
+    "price": 749,
+    "compare_at_price": null,
+    "category": "Bracelets",
+    "description": "A polished open kada that slips on easily. Stack it or wear it solo.",
+    "images": [
+      "https://images.unsplash.com/photo-1758995115643-1e8348bfde39?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHwzfHxlbGVnYW50JTIwZ29sZCUyMGJyYWNlbGV0JTIwbHV4dXJ5JTIwamV3ZWxyeXxlbnwwfHx8fDE3NzU5ODE4NTB8MA&ixlib=rb-4.1.0&q=80&w=1000",
+      "https://images.unsplash.com/photo-1758995119744-6454f091303f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHw0fHxlbGVnYW50JTIwZ29sZCUyMGJyYWNlbGV0JTIwbHV4dXJ5JTIwamV3ZWxyeXxlbnwwfHx8fDE3NzU5ODE4NTB8MA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-plated",
+      "Rose gold-plated"
+    ],
+    "sizes": [
+      "2.4",
+      "2.6",
+      "2.8"
+    ],
+    "bestseller": true,
+    "stock": 30,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "bracelet-002",
+    "name": "AD Tennis Bracelet",
+    "price": 1299,
+    "compare_at_price": 1699,
+    "category": "Bracelets",
+    "description": "A sparkling line of American Diamond stones with a secure box clasp.",
+    "images": [
+      "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=1000&q=80",
+      "https://images.unsplash.com/photo-1767921777873-81818b812a4d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHwxfHxlbGVnYW50JTIwZ29sZCUyMGJyYWNlbGV0JTIwbHV4dXJ5JTIwamV3ZWxyeXxlbnwwfHx8fDE3NzU5ODE4NTB8MA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Silver-tone"
+    ],
+    "sizes": [
+      "Adjustable"
+    ],
+    "bestseller": true,
+    "stock": 20,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "bracelet-003",
+    "name": "Charm Link Bracelet",
+    "price": 899,
+    "compare_at_price": null,
+    "category": "Bracelets",
+    "description": "Golden links with tiny charms — add meaning to every wrist movement.",
+    "images": [
+      "https://images.unsplash.com/photo-1758995119744-6454f091303f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHw0fHxlbGVnYW50JTIwZ29sZCUyMGJyYWNlbGV0JTIwbHV4dXJ5JTIwamV3ZWxyeXxlbnwwfHx8fDE3NzU5ODE4NTB8MA&ixlib=rb-4.1.0&q=80&w=1000",
+      "https://images.unsplash.com/photo-1767921777873-81818b812a4d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHwxfHxlbGVnYW50JTIwZ29sZCUyMGJyYWNlbGV0JTIwbHV4dXJ5JTIwamV3ZWxyeXxlbnwwfHx8fDE3NzU5ODE4NTB8MA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-plated",
+      "Rose gold-plated"
+    ],
+    "sizes": [
+      "Adjustable"
+    ],
+    "bestseller": false,
+    "stock": 25,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "bracelet-004",
+    "name": "Men's Rope Chain Bracelet",
+    "price": 799,
+    "compare_at_price": null,
+    "category": "Bracelets",
+    "description": "A bold rope-chain bracelet in stainless steel with a lobster clasp. Won't fade or rust.",
+    "images": [
+      "https://images.unsplash.com/photo-1767921777873-81818b812a4d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHwxfHxlbGVnYW50JTIwZ29sZCUyMGJyYWNlbGV0JTIwbHV4dXJ5JTIwamV3ZWxyeXxlbnwwfHx8fDE3NzU5ODE4NTB8MA&ixlib=rb-4.1.0&q=80&w=1000",
+      "https://images.unsplash.com/photo-1758995115643-1e8348bfde39?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHwzfHxlbGVnYW50JTIwZ29sZCUyMGJyYWNlbGV0JTIwbHV4dXJ5JTIwamV3ZWxyeXxlbnwwfHx8fDE3NzU5ODE4NTB8MA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Gold-tone steel",
+      "Silver-tone steel"
+    ],
+    "sizes": [
+      "7.5 inch",
+      "8 inch"
+    ],
+    "bestseller": false,
+    "stock": 30,
+    "recipients": [
+      "him"
+    ]
+  },
+  {
+    "id": "gift-001",
+    "name": "Her Glow Gift Box",
+    "price": 1799,
+    "compare_at_price": 2198,
+    "category": "Gift Boxes",
+    "description": "Heart Sparkle Pendant + Crystal Stud Earrings in a velvet-lined keepsake box with a handwritten note card.",
+    "images": [
+      "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1000&q=80",
+      "https://images.unsplash.com/photo-1588444837495-c6cfeb53f32d?w=1000&q=80"
+    ],
+    "materials": [
+      "Ready to gift"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "bestseller": true,
+    "stock": 25,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "gift-002",
+    "name": "Love Duo Couple Box",
+    "price": 2299,
+    "compare_at_price": 2799,
+    "category": "Gift Boxes",
+    "description": "Promise Couple Rings with a pair of matching bracelets, wrapped and ribboned. Made for anniversaries.",
+    "images": [
+      "https://images.unsplash.com/photo-1627293509201-cd0c780043e6?w=1000&q=80",
+      "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1000&q=80"
+    ],
+    "materials": [
+      "Ready to gift"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "bestseller": true,
+    "stock": 15,
+    "recipients": [
+      "couples"
+    ]
+  },
+  {
+    "id": "gift-003",
+    "name": "Bridesmaid Gift Box",
+    "price": 1499,
+    "compare_at_price": 1848,
+    "category": "Gift Boxes",
+    "description": "Pearl Drop Pendant + Golden Hoops in a blush box — say thank you to your squad.",
+    "images": [
+      "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?w=1000&q=80",
+      "https://images.unsplash.com/photo-1744369382892-eb5b6a2fdc6f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwzfHxlbGVnYW50JTIwd29tYW4lMjBkaWFtb25kJTIwbmVja2xhY2UlMjBsdXh1cnl8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Ready to gift"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "bestseller": false,
+    "stock": 30,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "gift-004",
+    "name": "Mini Treat Box",
+    "price": 999,
+    "compare_at_price": null,
+    "category": "Gift Boxes",
+    "description": "A pair of studs and a dainty band in a pocket-size gift box. The perfect 'just because'.",
+    "images": [
+      "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1000&q=80",
+      "https://images.unsplash.com/photo-1769151591224-2eee6793b885?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwzfHxkaWFtb25kJTIwZWFycmluZ3MlMjBsdXh1cnklMjBnb2xkfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Ready to gift"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "bestseller": false,
+    "stock": 40,
+    "recipients": [
+      "her"
+    ]
+  },
+  {
+    "id": "gift-005",
+    "name": "Gentleman's Gift Box",
+    "price": 1599,
+    "compare_at_price": null,
+    "category": "Gift Boxes",
+    "description": "Men's Rope Chain Bracelet with a steel ring in a matte black box. For brothers, husbands and best friends.",
+    "images": [
+      "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=1000&q=80",
+      "https://images.unsplash.com/photo-1767921777873-81818b812a4d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjV8MHwxfHNlYXJjaHwxfHxlbGVnYW50JTIwZ29sZCUyMGJyYWNlbGV0JTIwbHV4dXJ5JTIwamV3ZWxyeXxlbnwwfHx8fDE3NzU5ODE4NTB8MA&ixlib=rb-4.1.0&q=80&w=1000"
+    ],
+    "materials": [
+      "Ready to gift"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "bestseller": false,
+    "stock": 20,
+    "recipients": [
+      "him"
+    ]
+  }
+]

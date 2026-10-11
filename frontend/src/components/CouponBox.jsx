@@ -1,0 +1,80 @@
+import { useState } from "react";
+import { Tag, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useCart } from "../context/CartContext";
+import { useStorefront } from "../context/StorefrontContext";
+import { api, apiError } from "../lib/api";
+import { formatPrice } from "../lib/format";
+
+export default function CouponBox() {
+  const { coupon, setCouponCode, totalPrice } = useCart();
+  const { offers } = useStorefront();
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const apply = async (value) => {
+    const c = value.trim().toUpperCase();
+    if (!c) return;
+    setBusy(true);
+    setError("");
+    try {
+      const { data } = await api.post("/coupons/validate", { code: c, subtotal: totalPrice });
+      setCouponCode(data.code);
+      setCode("");
+      toast.success(`${data.code} applied — you save ${formatPrice(data.discount)}`);
+    } catch (err) {
+      setError(apiError(err, "That code didn't work"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (coupon) {
+    return (
+      <div className="mb-6" data-testid="coupon-applied">
+        <div className={`flex items-center justify-between gap-3 border border-dashed px-3 py-2.5 ${coupon.error || !coupon.offer ? "border-amber-400 bg-amber-50" : "border-emerald-400 bg-emerald-50"}`}>
+          <div className="flex items-center gap-2 min-w-0">
+            <Tag className="w-4 h-4 text-emerald-700 shrink-0" />
+            <div className="min-w-0 font-body">
+              <p className="text-sm font-semibold text-stone-900">{coupon.code}</p>
+              <p className="text-xs text-stone-600 truncate">
+                {!coupon.offer ? "This code is no longer available" : coupon.error ? coupon.error : `You save ${formatPrice(coupon.discount)}`}
+              </p>
+            </div>
+          </div>
+          <button onClick={() => setCouponCode("")} aria-label="Remove coupon" data-testid="coupon-remove" className="p-1 text-stone-500 hover:text-red-600"><X className="w-4 h-4" /></button>
+        </div>
+      </div>
+    );
+  }
+
+  const suggestions = offers.filter(o => o.code);
+  return (
+    <div className="mb-6">
+      <form onSubmit={(e) => { e.preventDefault(); apply(code); }} className="flex gap-2">
+        <input value={code} onChange={e => { setCode(e.target.value); setError(""); }} placeholder="Coupon code" aria-label="Coupon code" data-testid="coupon-input"
+          className="flex-1 min-w-0 h-11 border border-stone-300 bg-white px-3 text-sm font-body uppercase placeholder:normal-case outline-none focus:border-gold" />
+        <button type="submit" disabled={busy || !code.trim()} data-testid="coupon-apply"
+          className="h-11 px-5 bg-stone-900 text-white text-xs tracking-[0.15em] uppercase font-body font-semibold disabled:opacity-40">
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+        </button>
+      </form>
+      {error && <p data-testid="coupon-error" className="text-xs text-red-700 font-body mt-2">{error}</p>}
+      {suggestions.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {suggestions.map(o => (
+            <button key={o.id} type="button" onClick={() => apply(o.code)} disabled={busy}
+              className="w-full flex items-center justify-between gap-3 text-left border border-stone-200 bg-blush/60 hover:border-gold px-3 py-2">
+              <span className="min-w-0">
+                <span className="block text-xs font-body font-bold tracking-wider text-burgundy">{o.code}</span>
+                <span className="block text-[11px] font-body text-stone-600 truncate">{o.title}{o.min_order ? ` · min ${formatPrice(o.min_order)}` : ""}</span>
+              </span>
+              <span className="text-[11px] uppercase tracking-wider font-body font-semibold text-stone-700">Apply</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

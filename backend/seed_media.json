@@ -1,0 +1,20 @@
+{
+  "hero": [
+    "https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=1000&q=80",
+    "https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?w=1000&q=80",
+    "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=1000&q=80",
+    "https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?w=1000&q=80"
+  ],
+  "cats": {
+    "Rings": "https://images.unsplash.com/photo-1608042314453-ae338d80c427?w=1000&q=80",
+    "Necklaces": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1000&q=80",
+    "Earrings": "https://images.unsplash.com/photo-1617038220319-276d3cfab638?w=1000&q=80",
+    "Bracelets": "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=1000&q=80",
+    "Gift Boxes": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1000&q=80"
+  },
+  "for": {
+    "her": "https://images.unsplash.com/photo-1620656798579-1984d9e87df7?w=1000&q=80",
+    "him": "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=1000&q=80",
+    "couples": "https://images.unsplash.com/photo-1622398925373-3f91b1e275f5?w=1000&q=80"
+  }
+}

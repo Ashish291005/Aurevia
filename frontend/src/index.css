@@ -1,0 +1,118 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 40 20% 99%;
+        --foreground: 20 14% 10%;
+        --card: 0 0% 100%;
+        --card-foreground: 20 14% 10%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 20 14% 10%;
+        --primary: 345 68% 17%;
+        --primary-foreground: 40 20% 99%;
+        --secondary: 40 20% 96%;
+        --secondary-foreground: 20 14% 10%;
+        --muted: 30 10% 96%;
+        --muted-foreground: 24 5% 46%;
+        --accent: 38 48% 55%;
+        --accent-foreground: 20 14% 10%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 30 12% 90%;
+        --input: 30 12% 90%;
+        --ring: 38 48% 55%;
+        --chart-1: 12 76% 61%;
+        --chart-2: 173 58% 39%;
+        --chart-3: 197 37% 24%;
+        --chart-4: 43 74% 66%;
+        --chart-5: 27 87% 67%;
+        --radius: 0.5rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-cream text-foreground font-body antialiased;
+        margin: 0;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-heading;
+    }
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+    [data-debug-wrapper="true"] > * {
+        margin-left: inherit;
+        margin-right: inherit;
+        margin-top: inherit;
+        margin-bottom: inherit;
+        padding-left: inherit;
+        padding-right: inherit;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        column-gap: inherit;
+        row-gap: inherit;
+        gap: inherit;
+        border-left-width: inherit;
+        border-right-width: inherit;
+        border-top-width: inherit;
+        border-bottom-width: inherit;
+    }
+}
+
+.gold-underline {
+    position: relative;
+}
+.gold-underline::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 100%;
+    height: 1px;
+    background-color: #C5A059;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+.gold-underline:hover::after {
+    transform: scaleX(1);
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+::selection {
+    background-color: #C5A059;
+    color: #FFFFFF;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #FCFCFA;
+}
+::-webkit-scrollbar-thumb {
+    background: #C5A059;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #A57C4B;
+}   
