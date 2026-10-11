@@ -62,7 +62,7 @@ function OrderDrawer({ order, onClose, onUpdated }) {
                 options={ORDER_STATUSES.map(s => ({ value: s, label: STATUS_META[s].label }))} className="w-full" data-testid="order-status-select" />
             </label>
             <label className="text-sm">
-              <span className="block text-xs text-stone-500 mb-1">Payment (cash on delivery)</span>
+              <span className="block text-xs text-stone-500 mb-1">Payment ({order.payment_method === "razorpay" ? `online${order.razorpay_payment_id ? ` · ${order.razorpay_payment_id}` : ""}` : "cash on delivery"})</span>
               <Select value={order.payment_status} disabled={busy}
                 onChange={(v) => update({ payment_status: v }, "payment", `Payment marked ${v}`)}
                 options={[{ value: "unpaid", label: "Unpaid" }, { value: "paid", label: "Paid" }, { value: "refunded", label: "Refunded" }]} className="w-full" data-testid="order-payment-select" />

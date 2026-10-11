@@ -13,6 +13,10 @@ import logging
 import bcrypt
 import jwt
 import secrets
+import hmac
+import hashlib
+import base64
+import httpx
 from pathlib import Path
 from typing import Annotated, List, Optional, Literal
 from pydantic import AfterValidator, BaseModel, Field, field_validator
@@ -42,6 +46,8 @@ app = FastAPI(title="Aurevia API")
 api_router = APIRouter(prefix="/api")
 
 JWT_ALGORITHM = "HS256"
+# Set COOKIE_SECURE=true in production (HTTPS) so auth cookies are never sent over plain HTTP.
+COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -93,8 +99,8 @@ def create_refresh_token(user_id: str) -> str:
 
 
 def set_auth_cookies(response: Response, user_id: str, email: str):
-    response.set_cookie(key="access_token", value=create_access_token(user_id, email), httponly=True, secure=False, samesite="lax", max_age=900, path="/")
-    response.set_cookie(key="refresh_token", value=create_refresh_token(user_id), httponly=True, secure=False, samesite="lax", max_age=604800, path="/")
+    response.set_cookie(key="access_token", value=create_access_token(user_id, email), httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=900, path="/")
+    response.set_cookie(key="refresh_token", value=create_refresh_token(user_id), httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=604800, path="/")
 
 
 def public_user(user: dict) -> dict:
@@ -255,7 +261,7 @@ async def get_session(request: Request, response: Response):
             if payload and payload.get("type") == "refresh":
                 user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
                 if user:
-                    response.set_cookie(key="access_token", value=create_access_token(str(user["_id"]), user["email"]), httponly=True, secure=False, samesite="lax", max_age=900, path="/")
+                    response.set_cookie(key="access_token", value=create_access_token(str(user["_id"]), user["email"]), httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=900, path="/")
         except (jwt.InvalidTokenError, ValueError):
             user = None
     return {"user": public_user(user) if user else None}
@@ -290,7 +296,7 @@ async def refresh_token_endpoint(request: Request, response: Response):
         user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
-        response.set_cookie(key="access_token", value=create_access_token(str(user["_id"]), user["email"]), httponly=True, secure=False, samesite="lax", max_age=900, path="/")
+        response.set_cookie(key="access_token", value=create_access_token(str(user["_id"]), user["email"]), httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=900, path="/")
         return {"message": "Token refreshed"}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Refresh token expired")
@@ -772,7 +778,7 @@ class OrderInput(BaseModel):
     items: List[OrderItemInput] = Field(min_length=1, max_length=50)
     customer: CustomerInput
     notes: str = Field(default="", max_length=500)
-    payment_method: Literal["cod"] = "cod"
+    payment_method: Literal["cod", "razorpay"] = "cod"
     coupon_code: str = Field(default="", max_length=30)
 
 
@@ -797,6 +803,8 @@ async def restock(items: List[dict]):
 @api_router.post("/orders", status_code=201)
 async def place_order(input_data: OrderInput, request: Request):
     user = await get_optional_user(request)
+    if input_data.payment_method == "razorpay" and not razorpay_enabled():
+        raise HTTPException(status_code=400, detail="Online payment isn't available right now. Please choose cash on delivery.")
 
     # Merge duplicate lines (same product + options).
     merged = {}
@@ -862,9 +870,20 @@ async def place_order(input_data: OrderInput, request: Request):
         "created_at": ts,
         "updated_at": ts,
     }
+    if input_data.payment_method == "razorpay":
+        # Amount comes from the server-side total, never from the browser.
+        try:
+            rp = await razorpay_create_order(order["total"], order["number"])
+        except HTTPException:
+            await restock(reserved)
+            raise
+        order["razorpay_order_id"] = rp["id"]
     await db.orders.insert_one(order)
     order.pop("_id", None)
-    logger.info(f"Order {order['number']} placed ({order['total']})")
+    logger.info(f"Order {order['number']} placed ({order['total']}, {order['payment_method']})")
+    if input_data.payment_method == "razorpay":
+        order["razorpay"] = {"key_id": RAZORPAY_KEY_ID, "order_id": order["razorpay_order_id"],
+                             "amount": rupees_to_paise(order["total"]), "currency": "INR"}
     return order
 
 
@@ -919,6 +938,8 @@ async def admin_update_order(order_id: str, input_data: OrderUpdateInput, admin:
     if new_status and new_status != order["status"]:
         if order["status"] == "cancelled":
             raise HTTPException(status_code=400, detail="Cancelled orders can't be reopened. Ask the customer to place a new order.")
+        if order["payment_method"] == "razorpay" and order["payment_status"] != "paid" and new_status in ("processing", "shipped", "delivered"):
+            raise HTTPException(status_code=400, detail="This online order hasn't been paid yet, so it can't be fulfilled.")
         if new_status == "cancelled":
             await restock(order["items"])
         changes["status"] = new_status
@@ -938,6 +959,108 @@ async def admin_update_order(order_id: str, input_data: OrderUpdateInput, admin:
 
 
 # ---------- Admin: dashboard, customers, messages, subscribers ----------
+
+# ---------- Payments (Razorpay) ----------
+
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "").strip()
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "").strip()
+RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "").strip()
+
+
+def razorpay_enabled() -> bool:
+    return bool(RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET)
+
+
+def rupees_to_paise(amount: float) -> int:
+    return int(round(amount * 100))
+
+
+async def razorpay_create_order(total: float, receipt: str) -> dict:
+    auth = base64.b64encode(f"{RAZORPAY_KEY_ID}:{RAZORPAY_KEY_SECRET}".encode()).decode()
+    try:
+        async with httpx.AsyncClient(timeout=15) as http:
+            r = await http.post("https://api.razorpay.com/v1/orders",
+                                headers={"Authorization": f"Basic {auth}"},
+                                json={"amount": rupees_to_paise(total), "currency": "INR", "receipt": receipt})
+    except httpx.HTTPError:
+        logger.exception("Razorpay unreachable")
+        raise HTTPException(status_code=502, detail="Couldn't reach the payment provider. Please try again or choose cash on delivery.")
+    if r.status_code >= 300:
+        logger.error(f"Razorpay order create failed: {r.status_code} {r.text[:300]}")
+        raise HTTPException(status_code=502, detail="The payment provider rejected the request. Please try again or choose cash on delivery.")
+    return r.json()
+
+
+def valid_signature(message: str, signature: str, secret: str) -> bool:
+    expected = hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature or "")
+
+
+async def mark_paid(order: dict, payment_id: str, via: str):
+    if order["payment_status"] == "paid":
+        return
+    ts = now_iso()
+    await db.orders.update_one({"id": order["id"]}, {
+        "$set": {"payment_status": "paid", "razorpay_payment_id": payment_id, "paid_at": ts, "updated_at": ts},
+        "$push": {"history": {"status": "pending", "at": ts, "by": f"payment confirmed ({via})"}},
+    })
+    logger.info(f"Order {order['number']} paid via Razorpay ({via}) {payment_id}")
+
+
+class VerifyPaymentInput(BaseModel):
+    razorpay_order_id: str = Field(min_length=1, max_length=100)
+    razorpay_payment_id: str = Field(min_length=1, max_length=100)
+    razorpay_signature: str = Field(min_length=1, max_length=200)
+
+
+@api_router.get("/payments/config")
+async def payments_config():
+    return {"razorpay_enabled": razorpay_enabled(), "key_id": RAZORPAY_KEY_ID if razorpay_enabled() else None}
+
+
+@api_router.post("/orders/{order_id}/verify-payment")
+async def verify_payment(order_id: str, input_data: VerifyPaymentInput):
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order or order.get("razorpay_order_id") != input_data.razorpay_order_id:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if not valid_signature(f"{input_data.razorpay_order_id}|{input_data.razorpay_payment_id}", input_data.razorpay_signature, RAZORPAY_KEY_SECRET):
+        logger.warning(f"Bad Razorpay signature for order {order['number']}")
+        raise HTTPException(status_code=400, detail="We couldn't verify this payment. If money was deducted, it will be refunded automatically. Please contact us.")
+    if order["status"] == "cancelled":
+        raise HTTPException(status_code=409, detail="This order was cancelled before payment completed. Please contact us for a refund.")
+    await mark_paid(order, input_data.razorpay_payment_id, "checkout")
+    return await db.orders.find_one({"id": order_id}, {"_id": 0})
+
+
+@api_router.post("/orders/{order_id}/payment-cancelled")
+async def payment_cancelled(order_id: str):
+    """Customer closed the payment window: release the stock held for an unpaid online order."""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order or order["payment_method"] != "razorpay":
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order["payment_status"] == "paid" or order["status"] == "cancelled":
+        return {"status": order["status"], "payment_status": order["payment_status"]}
+    ts = now_iso()
+    await restock(order["items"])
+    await db.orders.update_one({"id": order_id}, {"$set": {"status": "cancelled", "updated_at": ts},
+                                                  "$push": {"history": {"status": "cancelled", "at": ts, "by": "payment not completed"}}})
+    return {"status": "cancelled", "payment_status": "unpaid"}
+
+
+@api_router.post("/payments/razorpay/webhook")
+async def razorpay_webhook(request: Request):
+    """Backup for customers who pay but close the tab before the browser can confirm."""
+    body = await request.body()
+    if not RAZORPAY_WEBHOOK_SECRET or not valid_signature(body.decode(), request.headers.get("X-Razorpay-Signature", ""), RAZORPAY_WEBHOOK_SECRET):
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    event = json.loads(body)
+    if event.get("event") in ("payment.captured", "order.paid"):
+        payment = event.get("payload", {}).get("payment", {}).get("entity", {})
+        order = await db.orders.find_one({"razorpay_order_id": payment.get("order_id")}, {"_id": 0})
+        if order:
+            await mark_paid(order, payment.get("id", ""), "webhook")
+    return {"ok": True}
+
 
 @api_router.get("/admin/stats")
 async def admin_stats(admin: dict = Depends(require_admin)):

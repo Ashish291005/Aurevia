@@ -77,7 +77,9 @@ export default function OrderDetails({ order }) {
           {order.discount > 0 && <p className="flex sm:justify-end gap-6 text-emerald-700"><span>Coupon {order.coupon?.code}</span><span>−{formatPrice(order.discount)}</span></p>}
           <p className="flex sm:justify-end gap-6 text-stone-600"><span>Shipping</span><span className="text-stone-900">{order.shipping ? formatPrice(order.shipping) : "Free"}</span></p>
           <p className="flex sm:justify-end gap-6 font-semibold text-stone-900"><span>Total</span><span className="text-burgundy">{formatPrice(order.total)}</span></p>
-          <p className="text-xs text-stone-500 pt-1">Cash on delivery · {order.payment_status === "paid" ? "Paid" : order.payment_status === "refunded" ? "Refunded" : "Payment due on delivery"}</p>
+          <p className="text-xs text-stone-500 pt-1">
+            {order.payment_method === "razorpay" ? "Paid online" : "Cash on delivery"} · {order.payment_status === "paid" ? "Paid" : order.payment_status === "refunded" ? "Refunded" : order.payment_method === "razorpay" ? "Payment not completed" : "Payment due on delivery"}
+          </p>
         </div>
       </div>
       {order.notes && <p className="text-sm font-body text-stone-600 bg-stone-50 px-4 py-3"><span className="font-semibold text-stone-800">Note:</span> {order.notes}</p>}
