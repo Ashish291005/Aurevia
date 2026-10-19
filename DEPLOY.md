@@ -1,6 +1,8 @@
 # Deploying Aurevia
 
-Database and image storage on **Supabase**, API on **Render**, storefront and admin on **Vercel**. All three have ## 1. Database & images: Supabase
+Database and image storage on **Supabase**, API on **Render**, storefront and admin on **Vercel**. All three have free tiers.
+
+## 1. Database & images: Supabase
 
 1. Create a project at https://supabase.com/dashboard. Choose region **Mumbai (ap-south-1)** and save the database password.
 2. **Project Settings → Database → Connection string → URI**, pick **Transaction pooler** (port 6543), and replace `[YOUR-PASSWORD]`. This is `DATABASE_URL`.
@@ -9,8 +11,6 @@ Database and image storage on **Supabase**, API on **Render**, storefront and ad
 5. Tables are created automatically on the backend's first start (`docs_products`, `docs_orders`, …), and the demo catalogue is seeded.
 
 Check it locally first: put the values in `backend/.env`, then run `python tests/test_api.py` with `TEST_DATABASE_URL` set to the same URL.
-
-word in it.
 
 ## 2. API: Render
 
