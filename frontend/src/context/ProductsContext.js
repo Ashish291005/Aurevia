@@ -14,6 +14,7 @@ export function ProductsProvider({ children }) {
   const refresh = useCallback(async () => {
     try {
       const { data } = await api.get("/products");
+      if (!Array.isArray(data)) throw new Error("Unexpected response");
       setProducts(data);
     } catch {
       // Backend unreachable: show the bundled catalog so the storefront still works.

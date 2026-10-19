@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
+import { fallbackStorefront } from "../data/products";
 
 // Homepage content managed from the admin panel: hero slides, categories and offers.
 const StorefrontContext = createContext({ slides: [], categories: [], offers: [], loading: true });
@@ -11,8 +12,12 @@ export function StorefrontProvider({ children }) {
   const refresh = useCallback(async () => {
     try {
       const { data: d } = await api.get("/storefront");
+      if (!Array.isArray(d?.slides)) throw new Error("Unexpected response");
       setData(d);
-    } catch { /* storefront falls back to built-in content */ }
+    } catch {
+      // Backend unreachable (e.g. a frontend-only preview deploy): show the built-in demo content.
+      setData(fallbackStorefront);
+    }
     finally { setLoading(false); }
   }, []);
 

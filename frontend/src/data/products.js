@@ -626,3 +626,117 @@ export const testimonials = [
 export const getProductById = (id) => products.find(p => p.id === id);
 export const getBestsellers = () => products.filter(p => p.bestseller);
 export const getByCategory = (cat) => products.filter(p => p.category === cat);
+
+// Homepage content shown when the backend is unreachable (mirrors the backend seed).
+export const fallbackStorefront = {
+  "slides": [
+    {
+      "id": "fs0",
+      "image": "https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=1000&q=80",
+      "title": "Jewellery that says it for you",
+      "subtitle": "Anti-tarnish, skin-friendly pieces from ₹449, gift-wrapped free",
+      "cta_text": "Shop Now",
+      "cta_link": "/shop"
+    },
+    {
+      "id": "fs1",
+      "image": "https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?w=1000&q=80",
+      "title": "The Festive Edit",
+      "subtitle": "Kundan, temple & AD sets for weddings, sangeet and celebrations",
+      "cta_text": "Explore Necklaces",
+      "cta_link": "/shop?category=Necklaces"
+    },
+    {
+      "id": "fs2",
+      "image": "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=1000&q=80",
+      "title": "Gift boxes, ready to wow",
+      "subtitle": "Curated sets in keepsake boxes with a handwritten note",
+      "cta_text": "Shop Gift Boxes",
+      "cta_link": "/shop?category=Gift%20Boxes"
+    },
+    {
+      "id": "fs3",
+      "image": "https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?w=1000&q=80",
+      "title": "Stack. Mix. Shine.",
+      "subtitle": "Everyday rings and bracelets under ₹999",
+      "cta_text": "Shop Bracelets",
+      "cta_link": "/shop?category=Bracelets"
+    }
+  ],
+  "categories": [
+    {
+      "id": "fc0",
+      "name": "Rings",
+      "image": "https://images.unsplash.com/photo-1608042314453-ae338d80c427?w=1000&q=80",
+      "product_count": 6
+    },
+    {
+      "id": "fc1",
+      "name": "Necklaces",
+      "image": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1000&q=80",
+      "product_count": 5
+    },
+    {
+      "id": "fc2",
+      "name": "Earrings",
+      "image": "https://images.unsplash.com/photo-1617038220319-276d3cfab638?w=1000&q=80",
+      "product_count": 5
+    },
+    {
+      "id": "fc3",
+      "name": "Bracelets",
+      "image": "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=1000&q=80",
+      "product_count": 4
+    },
+    {
+      "id": "fc4",
+      "name": "Gift Boxes",
+      "image": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1000&q=80",
+      "product_count": 5
+    }
+  ],
+  "offers": [
+    {
+      "id": "fo0",
+      "title": "10% off your first order",
+      "description": "New here? Use code WELCOME10 on orders above ₹499.",
+      "code": "WELCOME10",
+      "discount_type": "percent",
+      "discount_value": 10,
+      "min_order": 499,
+      "image": "https://images.unsplash.com/photo-1620656798579-1984d9e87df7?w=1000&q=80",
+      "cta_text": "Start Shopping",
+      "cta_link": "/shop",
+      "show_popup": true,
+      "show_banner": true
+    },
+    {
+      "id": "fo1",
+      "title": "Flat ₹200 off on gift boxes & more",
+      "description": "On orders above ₹1,999 with code GIFT200, made for festive gifting.",
+      "code": "GIFT200",
+      "discount_type": "flat",
+      "discount_value": 200,
+      "min_order": 1999,
+      "image": "",
+      "cta_text": "Shop Gift Boxes",
+      "cta_link": "/shop?category=Gift%20Boxes",
+      "show_popup": false,
+      "show_banner": true
+    },
+    {
+      "id": "fo2",
+      "title": "Free gift wrapping on every order",
+      "description": "Every piece arrives in our signature box with a handwritten note card.",
+      "code": "",
+      "discount_type": "none",
+      "discount_value": 0,
+      "min_order": 0,
+      "image": "",
+      "cta_text": "Find a Gift",
+      "cta_link": "/shop?for=her",
+      "show_popup": false,
+      "show_banner": true
+    }
+  ]
+};

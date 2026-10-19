@@ -22,7 +22,7 @@ export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULTS);
 
   useEffect(() => {
-    api.get("/settings").then(r => setSettings({ ...DEFAULTS, ...r.data })).catch(() => {});
+    api.get("/settings").then(r => { if (r.data && typeof r.data === "object" && "shipping_fee" in r.data) setSettings({ ...DEFAULTS, ...r.data }); }).catch(() => {});
   }, []);
 
   const value = useMemo(() => ({
