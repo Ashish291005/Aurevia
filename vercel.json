@@ -1,0 +1,30 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "frontend": {
+      "root": "frontend",
+      "framework": "create-react-app",
+      "rewrites": [
+        { "source": "/(.*)", "destination": "/index.html" }
+      ]
+    },
+    "admin": {
+      "root": "admin",
+      "framework": "vite"
+    },
+    "aurevia-api": {
+      "root": "backend",
+      "framework": "fastapi",
+      "entrypoint": "server:app"
+    }
+  },
+  "redirects": [
+    { "source": "/admin", "destination": "/admin/", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "aurevia-api" } },
+    { "source": "/uploads/(.*)", "destination": { "service": "aurevia-api" } },
+    { "source": "/admin/(.*)", "destination": { "service": "admin", "path": "/$1" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
+  ]
+}

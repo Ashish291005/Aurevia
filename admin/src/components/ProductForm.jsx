@@ -189,7 +189,7 @@ export default function ProductForm({ product, initial, categories, onClose, onS
           </div>
 
           <div className="md:col-span-2">
-            <Field label="Images" hint="The first image is the main photo. JPG, PNG, WEBP or GIF up to 5 MB.">
+            <Field label="Images" hint="The first image is the main photo. JPG, PNG, WEBP or GIF up to 4 MB.">
               <div className="flex flex-wrap gap-3 mb-3">
                 {form.images.map((img, i) => (
                   <div key={img} className={`relative w-24 h-28 border-2 ${i === 0 ? "border-gold" : "border-stone-200"} bg-stone-100 group`}>

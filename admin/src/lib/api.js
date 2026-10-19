@@ -4,7 +4,8 @@ import axios from "axios";
 export const api = axios.create({ baseURL: "/api", withCredentials: true });
 
 // Public storefront, used for "View in store" links.
-export const STORE_URL = (import.meta.env.VITE_STORE_URL || "http://localhost:3000").replace(/\/$/, "");
+// Locally the storefront runs on :3000; in production it shares the admin's domain (admin lives at /admin).
+export const STORE_URL = (import.meta.env.VITE_STORE_URL || (import.meta.env.DEV ? "http://localhost:3000" : window.location.origin)).replace(/\/$/, "");
 
 // Access tokens live 15 minutes: on a 401, try the refresh token once and replay the request.
 let refreshing = null;
