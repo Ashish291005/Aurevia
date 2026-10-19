@@ -1,26 +1,29 @@
 # Deploying Aurevia
 
-Database on **MongoDB Atlas**, API on **Render**, storefront and admin on **Vercel**. All three have free tiers.
+Database and image storage on **Supabase**, API on **Render**, storefront and admin on **Vercel**. All three have ## 1. Database & images: Supabase
 
-## 1. Database: MongoDB Atlas
+1. Create a project at https://supabase.com/dashboard. Choose region **Mumbai (ap-south-1)** and save the database password.
+2. **Project Settings → Database → Connection string → URI**, pick **Transaction pooler** (port 6543), and replace `[YOUR-PASSWORD]`. This is `DATABASE_URL`.
+3. **Project Settings → API**: copy the **Project URL** (`SUPABASE_URL`) and the **service_role** key (`SUPABASE_SERVICE_ROLE_KEY`). The service_role key is a full-access secret: keep it on the server only.
+4. **Storage → New bucket**: name `product-images`, set it to **Public**.
+5. Tables are created automatically on the backend's first start (`docs_products`, `docs_orders`, …), and the demo catalogue is seeded.
 
-1. Create a free **M0** cluster at https://cloud.mongodb.com.
-2. **Database Access** → add a user with a strong password.
-3. **Network Access** → allow `0.0.0.0/0` (Render's free tier has no fixed IP).
-4. **Connect → Drivers** → copy the `mongodb+srv://...` connection string and put the password in it.
+Check it locally first: put the values in `backend/.env`, then run `python tests/test_api.py` with `TEST_DATABASE_URL` set to the same URL.
+
+word in it.
 
 ## 2. API: Render
 
 1. https://dashboard.render.com → **New → Blueprint** → choose the `Aurevia` repo. Render reads `render.yaml`.
 2. Fill in the secret values when prompted:
-   - `MONGO_URL`: the Atlas string from step 1
+   - `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: from step 1
    - `ADMIN_EMAIL`, `ADMIN_PASSWORD`: your admin login (use a strong password)
    - `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`: see step 4 (leave empty for cash on delivery only)
 3. Deploy, then open `https://aurevia-api.onrender.com/api/` and check it returns `{"message":"Aurevia API"}`.
 
 > If Render gives the service a different URL, replace `https://aurevia-api.onrender.com` in `frontend/vercel.json` and `admin/vercel.json`.
 
-The free tier sleeps after 15 minutes idle, so the first request then takes about 30–50 seconds. Uploaded images are stored on the server's disk, which **is wiped on each deploy/restart on the free tier**. Use image URLs, or upgrade to a paid instance with a persistent disk.
+The free tier sleeps after 15 minutes idle, so the first request then takes about 30–50 seconds. Uploaded images go to Supabase Storage, so they survive redeploys.
 
 ## 3. Storefront and admin: Vercel
 

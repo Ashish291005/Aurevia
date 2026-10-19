@@ -11,14 +11,18 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
-      - key: DB_NAME
-        value: aurevia
       - key: COOKIE_SECURE
         value: "true"
       - key: JWT_SECRET
         generateValue: true
-      - key: MONGO_URL
+      - key: DATABASE_URL
         sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: product-images
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD

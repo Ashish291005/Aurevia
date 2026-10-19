@@ -30,17 +30,33 @@ ROOT_DIR = Path(__file__).parent
 UPLOAD_DIR = ROOT_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
+# Database: Supabase/Postgres (DATABASE_URL) > MongoDB (MONGO_URL) > in-memory dev fallback.
+database_url = os.environ.get("DATABASE_URL", "").strip()
 mongo_url = os.environ.get('MONGO_URL', '')
-if mongo_url.startswith(("mongodb://", "mongodb+srv://")):
+client = None
+if database_url.startswith(("postgres://", "postgresql://")):
+    from pgstore import PgDatabase
+    db = PgDatabase(database_url)
+    DB_BACKEND = "postgres"
+elif mongo_url.startswith(("mongodb://", "mongodb+srv://")):
     client = AsyncIOMotorClient(mongo_url)
-    USING_MEMORY_DB = False
+    db = client[os.environ.get('DB_NAME', 'aurevia')]
+    DB_BACKEND = "mongodb"
 else:
     # Dev fallback so the app runs without a database. Data is lost when the server restarts.
     from mongomock_motor import AsyncMongoMockClient
     client = AsyncMongoMockClient()
-    USING_MEMORY_DB = True
-    logger.warning("MONGO_URL is not a valid MongoDB URL - using an IN-MEMORY database. Changes will be lost on restart.")
-db = client[os.environ.get('DB_NAME', 'aurevia')]
+    db = client[os.environ.get('DB_NAME', 'aurevia')]
+    DB_BACKEND = "memory"
+    logger.warning("No DATABASE_URL or MONGO_URL configured - using an IN-MEMORY database. Changes will be lost on restart.")
+USING_MEMORY_DB = DB_BACKEND == "memory"
+logger.info(f"Database backend: {DB_BACKEND}")
+
+# Supabase Storage for uploaded images (persistent, unlike a free server's disk).
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+SUPABASE_BUCKET = os.environ.get("SUPABASE_BUCKET", "product-images").strip()
+USE_SUPABASE_STORAGE = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
 
 app = FastAPI(title="Aurevia API")
 api_router = APIRouter(prefix="/api")
@@ -631,10 +647,10 @@ async def delete_product(product_id: str, admin: dict = Depends(require_admin)):
     await db.products.delete_one({"id": product_id})
     # Remove uploaded image files no other product (or past order) still uses.
     for url in product.get("images", []):
-        if url.startswith("/uploads/") \
+        if (url.startswith("/uploads/") or (USE_SUPABASE_STORAGE and url.startswith(SUPABASE_URL))) \
                 and not await db.products.find_one({"images": url}, {"_id": 1}) \
                 and not await db.orders.find_one({"items.image": url}, {"_id": 1}):
-            (UPLOAD_DIR / Path(url).name).unlink(missing_ok=True)
+            await delete_uploaded_image(url)
     logger.info(f"Product deleted by {admin['email']}: {product_id}")
     return {"message": f"Deleted {product['name']}"}
 
@@ -652,8 +668,41 @@ async def upload_image(file: UploadFile = File(...), admin: dict = Depends(requi
     if len(content) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=400, detail="Image must be 5 MB or smaller")
     filename = f"{uuid.uuid4().hex}{ext}"
+    if USE_SUPABASE_STORAGE:
+        return {"url": await supabase_upload(filename, content, file.content_type)}
     (UPLOAD_DIR / filename).write_bytes(content)
     return {"url": f"/uploads/{filename}"}
+
+
+def supabase_public_url(filename: str) -> str:
+    return f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{filename}"
+
+
+async def supabase_upload(filename: str, content: bytes, content_type: str) -> str:
+    headers = {"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "apikey": SUPABASE_SERVICE_KEY, "Content-Type": content_type, "Cache-Control": "31536000"}
+    try:
+        async with httpx.AsyncClient(timeout=30) as http:
+            r = await http.post(f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{filename}", content=content, headers=headers)
+    except httpx.HTTPError:
+        logger.exception("Supabase Storage unreachable")
+        raise HTTPException(status_code=502, detail="Image storage is unreachable. Please try again.")
+    if r.status_code >= 300:
+        logger.error(f"Supabase upload failed: {r.status_code} {r.text[:300]}")
+        raise HTTPException(status_code=502, detail="Image storage rejected the upload. Check the bucket exists and is public.")
+    return supabase_public_url(filename)
+
+
+async def delete_uploaded_image(url: str):
+    if url.startswith("/uploads/"):
+        (UPLOAD_DIR / Path(url).name).unlink(missing_ok=True)
+    elif USE_SUPABASE_STORAGE and url.startswith(supabase_public_url("")):
+        name = url[len(supabase_public_url("")):]
+        try:
+            async with httpx.AsyncClient(timeout=15) as http:
+                await http.request("DELETE", f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}", json={"prefixes": [name]},
+                                   headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "apikey": SUPABASE_SERVICE_KEY})
+        except httpx.HTTPError:
+            logger.warning(f"Could not delete {name} from Supabase Storage")
 
 
 # ---------- Storefront content: categories, hero slides, offers ----------
@@ -1366,6 +1415,8 @@ async def seed_storefront():
 
 @app.on_event("startup")
 async def startup():
+    if DB_BACKEND == "postgres":
+        await db.connect()
     await db.users.create_index("email", unique=True)
     await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)
     await db.login_attempts.create_index("identifier")
@@ -1381,4 +1432,7 @@ async def startup():
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    if DB_BACKEND == "postgres":
+        await db.close()
+    elif client:
+        client.close()
