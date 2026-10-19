@@ -28,7 +28,13 @@ logger = logging.getLogger(__name__)
 
 ROOT_DIR = Path(__file__).parent
 UPLOAD_DIR = ROOT_DIR / "uploads"
-UPLOAD_DIR.mkdir(exist_ok=True)
+try:
+    UPLOAD_DIR.mkdir(exist_ok=True)
+except OSError:
+    # Serverless platforms (e.g. Vercel) have a read-only code directory; /tmp is the only writable place.
+    # Files there are not persistent, so production should use Supabase Storage (SUPABASE_URL/KEY).
+    UPLOAD_DIR = Path("/tmp/aurevia-uploads")
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Database: Supabase/Postgres (DATABASE_URL) > MongoDB (MONGO_URL) > in-memory dev fallback.
 database_url = os.environ.get("DATABASE_URL", "").strip()
@@ -50,10 +56,13 @@ else:
     DB_BACKEND = "memory"
     logger.warning("No DATABASE_URL or MONGO_URL configured - using an IN-MEMORY database. Changes will be lost on restart.")
 USING_MEMORY_DB = DB_BACKEND == "memory"
+if USING_MEMORY_DB and os.environ.get("VERCEL"):
+    # Each serverless instance would get its own empty database; data would appear and vanish at random.
+    logger.error("Running on Vercel without DATABASE_URL: set it to your Supabase connection string.")
 logger.info(f"Database backend: {DB_BACKEND}")
 
 # Supabase Storage for uploaded images (persistent, unlike a free server's disk).
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+SUPABASE_URL = re.sub(r"/(rest|storage)/v1/?$", "", os.environ.get("SUPABASE_URL", "").strip().rstrip("/"))  # tolerate copied API URLs
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 SUPABASE_BUCKET = os.environ.get("SUPABASE_BUCKET", "product-images").strip()
 USE_SUPABASE_STORAGE = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
@@ -656,7 +665,7 @@ async def delete_product(product_id: str, admin: dict = Depends(require_admin)):
 
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
-MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+MAX_UPLOAD_BYTES = 4 * 1024 * 1024  # Vercel functions accept request bodies up to 4.5 MB
 
 
 @api_router.post("/admin/upload")
@@ -666,7 +675,7 @@ async def upload_image(file: UploadFile = File(...), admin: dict = Depends(requi
         raise HTTPException(status_code=400, detail="Only JPG, PNG, WEBP or GIF images are allowed")
     content = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=400, detail="Image must be 5 MB or smaller")
+        raise HTTPException(status_code=400, detail="Image must be 4 MB or smaller")
     filename = f"{uuid.uuid4().hex}{ext}"
     if USE_SUPABASE_STORAGE:
         return {"url": await supabase_upload(filename, content, file.content_type)}

@@ -8,6 +8,7 @@ $inc, $push, upsert) / delete_one / count_documents / create_index, filters with
 (including dotted paths and array membership), $ne, $gt(e), $lt(e), $in, $or, $exists,
 projections, single-field sort and limits.
 """
+import asyncio
 import json
 import re
 from datetime import datetime
@@ -74,7 +75,14 @@ class _Sql:
         return "(" + " AND ".join(parts) + ")"
 
     def eq(self, field: str, value: Any) -> str:
-        return f"doc @> {self.arg(json.dumps(_nest(field, _encode(value))))}::jsonb"
+        value = _encode(value)
+        if isinstance(value, (dict, list)):
+            return f"doc @> {self.arg(json.dumps(_nest(field, value)))}::jsonb"
+        # Scalars use a lax-mode JSON path, which (like MongoDB) looks inside arrays along the way:
+        # {"items.product_id": x} matches any item, {"images": url} matches any element.
+        # The @? operator is served by the jsonb_path_ops GIN index.
+        path = "$" + "".join(f".{json.dumps(part)}" for part in field.split("."))
+        return f"doc @? {self.arg(f'{path} ? (@ == {json.dumps(value)})')}::jsonpath"
 
     def op(self, field: str, op: str, value: Any) -> str:
         if op == "$ne":
@@ -139,7 +147,7 @@ class Cursor:
         if length:
             sql += f" LIMIT {int(length)}"
         await self.coll.ensure()
-        rows = await self.coll.db.pool.fetch(sql, *q.args)
+        rows = await (await self.coll.db.get_pool()).fetch(sql, *q.args)
         return [_project(_decode(json.loads(r["doc"])), self.projection) for r in rows]
 
     def __aiter__(self):
@@ -158,8 +166,11 @@ class Collection:
     async def ensure(self):
         if self.name in self.db.ready:
             return
-        await self.db.pool.execute(f"CREATE TABLE IF NOT EXISTS {self.table} (pk bigserial PRIMARY KEY, doc jsonb NOT NULL)")
-        await self.db.pool.execute(f"CREATE INDEX IF NOT EXISTS {self.table}_gin ON {self.table} USING gin (doc jsonb_path_ops)")
+        await (await self.db.get_pool()).execute(f"CREATE TABLE IF NOT EXISTS {self.table} (pk bigserial PRIMARY KEY, doc jsonb NOT NULL)")
+        await (await self.db.get_pool()).execute(f"CREATE INDEX IF NOT EXISTS {self.table}_gin ON {self.table} USING gin (doc jsonb_path_ops)")
+        # Supabase exposes the public schema through its Data API; RLS with no policies blocks that path.
+        # The backend connects as the table owner, which bypasses RLS, so it is unaffected.
+        await (await self.db.get_pool()).execute(f"ALTER TABLE {self.table} ENABLE ROW LEVEL SECURITY")
         self.db.ready.add(self.name)
 
     async def create_index(self, field: str, unique: bool = False, **_ignored):
@@ -167,7 +178,7 @@ class Collection:
         if not _NAME.match(field):
             raise ValueError(field)
         kind = "UNIQUE INDEX" if unique else "INDEX"
-        await self.db.pool.execute(f"CREATE {kind} IF NOT EXISTS {self.table}_{field}_idx ON {self.table} ((doc->>'{field}'))")
+        await (await self.db.get_pool()).execute(f"CREATE {kind} IF NOT EXISTS {self.table}_{field}_idx ON {self.table} ((doc->>'{field}'))")
 
     def find(self, flt: Optional[dict] = None, projection: Optional[dict] = None) -> Cursor:
         return Cursor(self, flt or {}, projection)
@@ -179,13 +190,13 @@ class Collection:
     async def count_documents(self, flt: Optional[dict] = None) -> int:
         await self.ensure()
         q = _Sql()
-        return await self.db.pool.fetchval(f"SELECT count(*) FROM {self.table} WHERE {q.where(flt)}", *q.args)
+        return await (await self.db.get_pool()).fetchval(f"SELECT count(*) FROM {self.table} WHERE {q.where(flt)}", *q.args)
 
     async def insert_one(self, doc: dict) -> _Result:
         await self.ensure()
         doc.setdefault("_id", str(ObjectId()))
         try:
-            await self.db.pool.execute(f"INSERT INTO {self.table} (doc) VALUES ($1::jsonb)", json.dumps(_encode(doc)))
+            await (await self.db.get_pool()).execute(f"INSERT INTO {self.table} (doc) VALUES ($1::jsonb)", json.dumps(_encode(doc)))
         except asyncpg.UniqueViolationError as e:
             raise DuplicateKeyError(str(e)) from e
         return _Result(inserted_id=doc["_id"])
@@ -218,7 +229,7 @@ class Collection:
         expr = self._update_expr(q, update)
         where = q.where(flt)
         target = f"SELECT pk FROM {self.table} WHERE {where}" + ("" if many else " LIMIT 1 FOR UPDATE")
-        rows = await self.db.pool.fetch(f"UPDATE {self.table} SET doc = {expr} WHERE pk IN ({target}) RETURNING pk", *q.args)
+        rows = await (await self.db.get_pool()).fetch(f"UPDATE {self.table} SET doc = {expr} WHERE pk IN ({target}) RETURNING pk", *q.args)
         if not rows and upsert:
             base = {k: v for k, v in flt.items() if not k.startswith("$") and not isinstance(v, dict)}
             for k, v in update.get("$set", {}).items():
@@ -236,7 +247,7 @@ class Collection:
     async def delete_one(self, flt: dict) -> _Result:
         await self.ensure()
         q = _Sql()
-        rows = await self.db.pool.fetch(
+        rows = await (await self.db.get_pool()).fetch(
             f"DELETE FROM {self.table} WHERE pk IN (SELECT pk FROM {self.table} WHERE {q.where(flt)} LIMIT 1) RETURNING pk", *q.args)
         return _Result(deleted=len(rows))
 
@@ -248,18 +259,28 @@ class DuplicateKeyError(Exception):
 class PgDatabase:
     def __init__(self, dsn: str):
         self.dsn = dsn
-        self.pool: Optional[asyncpg.Pool] = None
         self.ready: set = set()
         self._colls: Dict[str, Collection] = {}
+        # asyncpg pools are bound to the event loop that created them, so keep one per loop
+        # (normally there is exactly one; test clients and some serverless runtimes use several).
+        self._pools: Dict[Any, asyncpg.Pool] = {}
+
+    async def get_pool(self) -> asyncpg.Pool:
+        loop = asyncio.get_running_loop()
+        pool = self._pools.get(loop)
+        if pool is None or pool._closed:
+            # statement_cache_size=0 keeps it compatible with Supabase's transaction pooler (port 6543).
+            pool = await asyncpg.create_pool(self.dsn, min_size=1, max_size=5, statement_cache_size=0)
+            self._pools[loop] = pool
+        return pool
 
     async def connect(self):
-        if self.pool is None:
-            # statement_cache_size=0 keeps it compatible with Supabase's transaction pooler (port 6543).
-            self.pool = await asyncpg.create_pool(self.dsn, min_size=1, max_size=5, statement_cache_size=0)
+        await self.get_pool()
 
     async def close(self):
-        if self.pool:
-            await self.pool.close()
+        pool = self._pools.pop(asyncio.get_running_loop(), None)
+        if pool:
+            await pool.close()
 
     def __getitem__(self, name: str) -> Collection:
         if name not in self._colls:
