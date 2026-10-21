@@ -10,7 +10,10 @@
     },
     "admin": {
       "root": "admin",
-      "framework": "vite"
+      "framework": "vite",
+      "rewrites": [
+        { "source": "/admin/(.*)", "destination": "/admin/index.html" }
+      ]
     },
     "aurevia-api": {
       "root": "backend",
@@ -24,7 +27,7 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": { "service": "aurevia-api" } },
     { "source": "/uploads/(.*)", "destination": { "service": "aurevia-api" } },
-    { "source": "/admin/:path*", "destination": { "service": "admin", "path": "/:path*" } },
+    { "source": "/admin/(.*)", "destination": { "service": "admin" } },
     { "source": "/(.*)", "destination": { "service": "frontend" } }
   ]
 }

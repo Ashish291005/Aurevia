@@ -6,6 +6,9 @@ const BACKEND = process.env.BACKEND_URL || "http://127.0.0.1:8000";
 export default defineConfig(({ command }) => ({
   // Production is served from /admin/ on the same domain as the storefront (see the root vercel.json).
   base: command === "build" ? "/admin/" : "/",
+  // Services receive the original request path (/admin/...), so the built files live under dist/admin/
+  // and their on-disk paths match the public URLs exactly.
+  build: { outDir: "dist/admin", emptyOutDir: true },
   plugins: [react()],
   server: {
     port: 3001,
