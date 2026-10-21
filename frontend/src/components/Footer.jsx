@@ -56,7 +56,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 sm:px-8 py-16 sm:py-20">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-10">
           <div className="lg:col-span-2">
-            <h3 className="font-heading text-3xl text-white tracking-[0.2em] mb-4">AUREVIA</h3>
+            <img src="/images/logo/logo-light.png" alt="Aurevia" width="900" height="248" className="h-14 w-auto mb-5" loading="lazy" />
             <p className="text-sm leading-relaxed text-white/60 max-w-sm">Where Elegance Shines. Anti-tarnish fashion jewellery and ready-to-gift boxes, designed in India for every celebration.</p>
             <ul className="mt-6 space-y-2 text-sm text-white/60">
               {settings.store_email && <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-gold shrink-0" /><a href={`mailto:${settings.store_email}`} className="hover:text-gold">{settings.store_email}</a></li>}

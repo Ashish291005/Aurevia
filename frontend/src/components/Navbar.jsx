@@ -102,7 +102,7 @@ export default function Navbar() {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-72 bg-cream">
                   <SheetHeader>
-                    <SheetTitle className="font-heading text-2xl text-burgundy tracking-[0.2em]">AUREVIA</SheetTitle>
+                    <SheetTitle><img src="/images/logo/logo-burgundy.png" alt="Aurevia" className="h-10 w-auto" /></SheetTitle>
                   </SheetHeader>
                   <nav className="mt-8 flex flex-col gap-5">
                     {navLinks.map(link => (
@@ -125,8 +125,8 @@ export default function Navbar() {
             </div>
 
             {/* Logo */}
-            <Link to="/" data-testid="logo-link" className="font-heading text-2xl sm:text-3xl tracking-[0.2em] text-burgundy font-semibold">
-              AUREVIA
+            <Link to="/" data-testid="logo-link" aria-label="Aurevia home" className="shrink-0">
+              <img src="/images/logo/logo-burgundy.png" alt="Aurevia" width="900" height="248" className="h-9 sm:h-11 w-auto" />
             </Link>
 
             {/* Desktop nav */}

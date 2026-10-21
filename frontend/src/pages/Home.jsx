@@ -16,7 +16,7 @@ import { usePageTitle } from "../lib/hooks";
 import { ProductRow, Stars } from "../components/lively";
 import { BadgeCheck } from "lucide-react";
 
-const CRAFT_IMG = "https://images.unsplash.com/photo-1620656798579-1984d9e87df7?w=1200&q=80";
+const CRAFT_IMG = "/images/brand/jewelry-box-bg.webp";
 const fadeUp = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.5 } };
 
 function SectionHeading({ eyebrow, title, link, linkLabel = "View all" }) {

@@ -22,7 +22,7 @@ export default function Login() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col justify-between bg-burgundy p-12 text-white">
-        <p className="font-heading text-3xl tracking-[0.3em]">AUREVIA</p>
+        <img src={`${import.meta.env.BASE_URL}logo-light.png`} alt="Aurevia" className="h-14 w-auto self-start" />
         <div>
           <p className="text-xs tracking-[0.25em] uppercase text-gold font-semibold mb-4">Store Administration</p>
           <h1 className="font-heading text-5xl leading-tight mb-4">Manage your collection.</h1>
@@ -33,7 +33,7 @@ export default function Login() {
 
       <div className="flex items-center justify-center p-6 bg-cream">
         <form onSubmit={handleSubmit} data-testid="admin-login-form" className="w-full max-w-sm">
-          <div className="lg:hidden font-heading text-3xl tracking-[0.3em] text-burgundy text-center mb-10">AUREVIA</div>
+          <img src={`${import.meta.env.BASE_URL}logo-burgundy.png`} alt="Aurevia" className="lg:hidden h-12 w-auto mx-auto mb-10" />
           <div className="w-12 h-12 bg-burgundy/10 text-burgundy flex items-center justify-center mb-6">
             <Lock className="w-5 h-5" />
           </div>

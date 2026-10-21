@@ -1431,9 +1431,9 @@ async def seed_storefront():
     if await db.offers.count_documents({}) == 0:
         offers = [
             dict(title="10% off your first order", description="New here? Use code WELCOME10 on orders above ₹499.", code="WELCOME10",
-                 discount_type="percent", discount_value=10, min_order=499, image=media["for"]["her"], cta_text="Start Shopping", cta_link="/shop", show_popup=True, show_banner=True),
+                 discount_type="percent", discount_value=10, min_order=499, image=media["popup"], cta_text="Start Shopping", cta_link="/shop", show_popup=True, show_banner=True),
             dict(title="Flat ₹200 off on gift boxes & more", description="On orders above ₹1,999 with code GIFT200, made for festive gifting.", code="GIFT200",
-                 discount_type="flat", discount_value=200, min_order=1999, image="", cta_text="Shop Gift Boxes", cta_link="/shop?category=Gift%20Boxes", show_popup=False, show_banner=True, ends_at=(now_utc() + timedelta(days=5)).isoformat()),
+                 discount_type="flat", discount_value=200, min_order=1999, image=media["gift_banner"], cta_text="Shop Gift Boxes", cta_link="/shop?category=Gift%20Boxes", show_popup=False, show_banner=True, ends_at=(now_utc() + timedelta(days=5)).isoformat()),
             dict(title="Free gift wrapping on every order", description="Every piece arrives in our signature box with a handwritten note card.", code="",
                  discount_type="none", discount_value=0, min_order=0, image="", cta_text="Find a Gift", cta_link="/shop?for=her", show_popup=False, show_banner=True),
         ]

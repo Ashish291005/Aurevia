@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ShieldCheck, Gift, Sparkles, HeartHandshake } from "lucide-react";
 import { usePageTitle } from "../lib/hooks";
 
-const HERO_IMG = "https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?w=1600&q=80";
-const STORY_IMG = "https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?w=1200&q=80";
-const CTA_IMG = "https://images.unsplash.com/photo-1607344645866-009c320b63e0?w=1600&q=80";
+const HERO_IMG = "/images/hero/hero-1.webp";
+const STORY_IMG = "/images/brand/brand-bg.webp";
+const CTA_IMG = "/images/brand/pearl-bg.webp";
 
 const fadeUp = { initial: { opacity: 0, y: 30 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.6 } };
 

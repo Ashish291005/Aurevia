@@ -17,6 +17,8 @@ export default defineConfig(({ command }) => ({
     proxy: {
       "/api": BACKEND,
       "/uploads": BACKEND,
+      // Product photos in frontend/public/images are served by the storefront (same origin on the live site).
+      "/images": process.env.STORE_URL || "http://localhost:3000",
     },
   },
 }));

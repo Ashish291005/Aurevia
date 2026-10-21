@@ -27,7 +27,7 @@ function Sidebar({ page, onNavigate }) {
   return (
     <div className="h-full flex flex-col bg-burgundy text-white">
       <div className="px-6 h-16 flex items-center gap-3 border-b border-white/10">
-        <span className="font-heading text-2xl tracking-[0.25em]">AUREVIA</span>
+        <img src={`${import.meta.env.BASE_URL}logo-light.png`} alt="Aurevia" className="h-8 w-auto" />
         <span className="text-[10px] tracking-[0.2em] uppercase text-gold font-semibold">Admin</span>
       </div>
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1" aria-label="Admin">
@@ -88,7 +88,7 @@ export default function Layout({ page, children }) {
 
       <header className="lg:hidden sticky top-0 z-40 h-14 bg-burgundy text-white flex items-center justify-between px-4">
         <button onClick={() => setMobileOpen(true)} aria-label="Open menu" data-testid="mobile-menu" className="p-1"><Menu className="w-5 h-5" /></button>
-        <span className="font-heading text-xl tracking-[0.25em]">AUREVIA</span>
+        <img src={`${import.meta.env.BASE_URL}logo-light.png`} alt="Aurevia" className="h-7 w-auto" />
         <span className="w-7" />
       </header>
 
