@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, Lock } from "lucide-react";
 import { Instagram, Facebook, Twitter } from "./ui/social-icons";
 import { api, apiError } from "../lib/api";
 import { useSettings } from "../context/SettingsContext";
 import { useProducts } from "../context/ProductsContext";
+
+// Admin panel: its own Vite app on :3001 locally, served at /admin on the live site (see vercel.json).
+const ADMIN_URL = process.env.REACT_APP_ADMIN_URL || (process.env.NODE_ENV === "development" ? "http://localhost:3001" : "/admin/");
 
 export function SocialLinks({ className = "", iconClass = "w-5 h-5" }) {
   const s = useSettings();
@@ -111,7 +114,14 @@ export default function Footer() {
 
         <div className="border-t border-white/10 mt-14 pt-8 flex flex-col sm:flex-row gap-3 justify-between text-xs text-white/40">
           <p>&copy; {new Date().getFullYear()} Aurevia. All rights reserved.</p>
-          <p>Fashion jewellery (gold-plated, AD & kundan) · Cash on delivery across India</p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+            <p>Fashion jewellery (gold-plated, AD & kundan) · Cash on delivery across India</p>
+            {/* Full page load (not a router Link): the admin is a separate app. */}
+            <a href={ADMIN_URL} data-testid="footer-admin-link"
+              className="inline-flex items-center gap-1.5 self-start rounded-full border border-white/20 px-3 py-1 text-white/60 hover:text-gold hover:border-gold transition-colors">
+              <Lock className="w-3 h-3" /> Admin
+            </a>
+          </div>
         </div>
       </div>
     </footer>
