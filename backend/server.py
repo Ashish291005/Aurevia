@@ -110,7 +110,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_jwt_secret() -> str:
-    return os.environ["JWT_SECRET"]
+    secret = os.environ.get("JWT_SECRET", "").strip()
+    if not secret:
+        logger.error("JWT_SECRET is not set - logins cannot work. Add it to the environment variables.")
+        raise HTTPException(status_code=503, detail="Sign-in is not configured on the server yet (JWT_SECRET missing).")
+    return secret
 
 
 def create_access_token(user_id: str, email: str) -> str:
@@ -1336,6 +1340,20 @@ async def admin_delete_subscriber(email: str, admin: dict = Depends(require_admi
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Subscriber not found")
     return {"message": f"Removed {email}"}
+
+
+@api_router.get("/health")
+async def health():
+    """Configuration check for deployments. Reports only whether settings exist, never their values."""
+    return {
+        "database": DB_BACKEND,
+        "image_storage": "supabase" if USE_SUPABASE_STORAGE else "local-disk",
+        "jwt_secret_set": bool(os.environ.get("JWT_SECRET", "").strip()),
+        "admin_password_set": bool(os.environ.get("ADMIN_PASSWORD")),
+        "razorpay_enabled": razorpay_enabled(),
+        "cookie_secure": COOKIE_SECURE,
+        "on_vercel": bool(os.environ.get("VERCEL")),
+    }
 
 
 @api_router.get("/")
