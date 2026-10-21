@@ -24,7 +24,7 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": { "service": "aurevia-api" } },
     { "source": "/uploads/(.*)", "destination": { "service": "aurevia-api" } },
-    { "source": "/admin/(.*)", "destination": { "service": "admin", "path": "/$1" } },
+    { "source": "/admin/:path*", "destination": { "service": "admin", "path": "/:path*" } },
     { "source": "/(.*)", "destination": { "service": "frontend" } }
   ]
 }
