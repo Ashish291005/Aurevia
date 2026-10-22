@@ -5,7 +5,7 @@ import { Input } from "../components/ui/input";
 import OrderDetails, { StatusBadge } from "../components/OrderDetails";
 import { api, apiError } from "../lib/api";
 import { formatDate } from "../lib/format";
-import { usePageTitle } from "../lib/hooks";
+import { useLiveRefresh, usePageTitle } from "../lib/hooks";
 
 export default function TrackOrder() {
   const [params] = useSearchParams();
@@ -36,6 +36,13 @@ export default function TrackOrder() {
     const n = params.get("number");
     if (n && state?.email) lookup(n, state.email);
   }, [params, state, lookup]);
+
+  // Keep the order on screen up to date (quietly, without the loading state).
+  const refresh = useCallback(() => {
+    if (!order) return;
+    api.post("/orders/track", { number: order.number, email: order.customer.email }).then(r => setOrder(r.data)).catch(() => {});
+  }, [order]);
+  useLiveRefresh(refresh, { enabled: Boolean(order) });
 
   return (
     <div data-testid="track-order-page" className="pt-20 sm:pt-24">

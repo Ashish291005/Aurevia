@@ -1,16 +1,28 @@
+import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import OrderDetails from "../components/OrderDetails";
+import { api } from "../lib/api";
 import { formatDate } from "../lib/format";
-import { usePageTitle } from "../lib/hooks";
+import { useLiveRefresh, usePageTitle } from "../lib/hooks";
 
 export default function OrderConfirmation() {
   const { number } = useParams();
   const { state } = useLocation();
   const { user } = useAuth();
-  const order = state?.order?.number === number ? state.order : null;
+  // The order handed over by checkout, kept by the browser even across reloads, so re-fetch it
+  // to pick up status changes made in admin since.
+  const snapshot = state?.order?.number === number ? state.order : null;
+  const [order, setOrder] = useState(snapshot);
+  const email = snapshot?.customer?.email;
+  const refresh = useCallback(() => {
+    if (!email) return;
+    api.post("/orders/track", { number, email }).then(r => setOrder(r.data)).catch(() => { /* keep showing the last copy */ });
+  }, [number, email]);
+  useEffect(() => { refresh(); }, [refresh]);
+  useLiveRefresh(refresh, { enabled: Boolean(email) });
   usePageTitle("Order confirmed");
 
   return (

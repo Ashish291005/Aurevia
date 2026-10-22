@@ -8,7 +8,7 @@ import { Input } from "../components/ui/input";
 import OrderDetails, { StatusBadge } from "../components/OrderDetails";
 import { api, apiError } from "../lib/api";
 import { formatDate, formatPrice } from "../lib/format";
-import { usePageTitle } from "../lib/hooks";
+import { useLiveRefresh, usePageTitle } from "../lib/hooks";
 
 const TABS = [
   { key: "orders", label: "Orders", Icon: Package },
@@ -86,6 +86,7 @@ function OrdersTab() {
     api.get("/orders/mine").then(r => setOrders(r.data)).catch(err => { toast.error(apiError(err, "Could not load orders")); setOrders([]); });
   }, []);
   useEffect(() => { load(); }, [load]);
+  useLiveRefresh(load);
 
   if (!orders) return <p className="py-12 text-center text-sm text-stone-500 font-body">Loading your orders...</p>;
   if (!orders.length) {

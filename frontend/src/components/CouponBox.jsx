@@ -52,14 +52,16 @@ export default function CouponBox() {
   const suggestions = offers.filter(o => o.code);
   return (
     <div className="mb-6">
-      <form onSubmit={(e) => { e.preventDefault(); apply(code); }} className="flex gap-2">
+      {/* Not a <form>: on checkout this sits inside the order form, and submitting it would place the order. */}
+      <div className="flex gap-2">
         <input value={code} onChange={e => { setCode(e.target.value); setError(""); }} placeholder="Coupon code" aria-label="Coupon code" data-testid="coupon-input"
+          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); if (code.trim() && !busy) apply(code); } }}
           className="flex-1 min-w-0 h-11 border border-stone-300 bg-white px-3 text-sm font-body uppercase placeholder:normal-case outline-none focus:border-gold" />
-        <button type="submit" disabled={busy || !code.trim()} data-testid="coupon-apply"
+        <button type="button" onClick={() => apply(code)} disabled={busy || !code.trim()} data-testid="coupon-apply"
           className="h-11 px-5 bg-stone-900 text-white text-xs tracking-[0.15em] uppercase font-body font-semibold disabled:opacity-40">
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
         </button>
-      </form>
+      </div>
       {error && <p data-testid="coupon-error" className="text-xs text-red-700 font-body mt-2">{error}</p>}
       {suggestions.length > 0 && (
         <div className="mt-3 space-y-2">
