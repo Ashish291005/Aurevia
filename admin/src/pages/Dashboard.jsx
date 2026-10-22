@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { DollarSign, ShoppingCart, Clock, Receipt, Package, AlertTriangle, Users, Mail, ArrowRight } from "lucide-react";
+import { IndianRupee, ShoppingCart, Clock, Receipt, Package, AlertTriangle, Users, Mail, ArrowRight } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import { useAdminData } from "../AdminData";
 import { navigate } from "../lib/router";
@@ -41,7 +41,7 @@ export default function Dashboard() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
-        <Stat icon={DollarSign} label="Revenue" value={moneyCompact(stats.revenue)} hint="All time, excl. cancelled" />
+        <Stat icon={IndianRupee} label="Revenue" value={moneyCompact(stats.revenue)} hint="All time, excl. cancelled" />
         <Stat icon={ShoppingCart} label="Orders" value={stats.orders} hint={`${stats.pending_orders} awaiting confirmation`} onClick={() => navigate("orders")} />
         <Stat icon={Clock} label="Open orders" value={stats.open_orders} hint="Pending + processing" tone={stats.open_orders ? "text-amber-700" : "text-stone-900"} onClick={() => navigate("orders")} />
         <Stat icon={Receipt} label="Avg. order value" value={money(stats.avg_order_value)} />

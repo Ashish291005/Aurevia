@@ -96,7 +96,7 @@ export default function Layout({ page, children }) {
         {stats?.memory_db && (
           <div data-testid="memory-db-warning" className="flex gap-3 items-start rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 mb-6 text-sm">
             <Database className="w-4 h-4 shrink-0 mt-0.5" />
-            <p><strong>Temporary database:</strong> changes reset when the backend restarts. Set <code className="bg-amber-100 px-1 rounded">MONGO_URL</code> in <code className="bg-amber-100 px-1 rounded">backend/.env</code> to keep them.</p>
+            <p><strong>Temporary database:</strong> changes reset when the backend restarts. Set <code className="bg-amber-100 px-1 rounded">DATABASE_URL</code> (Supabase) in <code className="bg-amber-100 px-1 rounded">backend/.env</code> to keep them.</p>
           </div>
         )}
         {children}

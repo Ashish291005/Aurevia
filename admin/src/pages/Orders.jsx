@@ -70,7 +70,7 @@ function OrderDrawer({ order, onClose, onUpdated }) {
             <div className="sm:col-span-2">
               <span className="block text-xs text-stone-500 mb-1">Tracking number</span>
               <div className="flex gap-2">
-                <Input value={tracking} onChange={e => setTracking(e.target.value)} placeholder="e.g. 1Z999AA10123456784" maxLength={80} disabled={final} data-testid="order-tracking-input" className="rounded-md" />
+                <Input value={tracking} onChange={e => setTracking(e.target.value)} placeholder="Courier AWB, e.g. Delhivery 1234567890123" maxLength={80} disabled={final} data-testid="order-tracking-input" className="rounded-md" />
                 <Button variant="secondary" disabled={final || tracking === (order.tracking_number || "")} loading={busy === "tracking"}
                   onClick={() => update({ tracking_number: tracking }, "tracking", "Tracking number saved")}>Save</Button>
               </div>
