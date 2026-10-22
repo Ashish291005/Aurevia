@@ -130,7 +130,8 @@ export default function Checkout() {
           currency: "INR",
           name: "Aurevia",
           description: `Order ${order.number}`,
-          prefill: { name: `${form.first_name} ${form.last_name}`.trim(), email: form.email, contact: form.phone },
+          // Razorpay wants +91XXXXXXXXXX; customers type "98765 43210", "+91-98765..." etc.
+          prefill: { name: `${form.first_name} ${form.last_name}`.trim(), email: form.email, contact: `+91${form.phone.replace(/\D/g, "").slice(-10)}` },
           notes: { order_number: order.number },
           theme: { color: "#4A0E1F" },
           handler: async (resp) => {
