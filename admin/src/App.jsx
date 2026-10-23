@@ -15,10 +15,11 @@ import Homepage from "./pages/Homepage";
 import Categories from "./pages/Categories";
 import Offers from "./pages/Offers";
 import Reviews from "./pages/Reviews";
+import Coupons from "./pages/Coupons";
 
 const PAGES = {
   dashboard: Dashboard, orders: Orders, products: Products, customers: Customers, messages: Messages, subscribers: Subscribers,
-  reviews: Reviews, homepage: Homepage, categories: Categories, offers: Offers, settings: Settings,
+  reviews: Reviews, homepage: Homepage, categories: Categories, offers: Offers, coupons: Coupons, settings: Settings,
 };
 
 function AdminApp() {

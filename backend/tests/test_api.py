@@ -94,10 +94,11 @@ with TestClient(server.app) as anon:
     r = cust.post("/api/orders", json={"customer": customer, "items": [item(2)]})
     check("oversell blocked", r.status_code == 409 and "left" in r.json()["detail"], r.text)
     check("stock unchanged after failed order", anon.get(f"/api/products/{pid}").json()["stock"] == 1)
-    coupon = admin.post("/api/admin/offers", json={"title": "T", "code": f"T{RUN}", "discount_type": "percent", "discount_value": 10, "min_order": 50}).json()
+    coupon = admin.post("/api/admin/coupons", json={"code": f"T{RUN}", "discount_type": "percent", "discount_value": 10, "min_order": 50, "per_customer_limit": 0}).json()
     r = anon.post("/api/coupons/validate", json={"code": f"t{RUN}", "subtotal": 100})
     check("coupon validates", r.status_code == 200 and r.json()["discount"] == 10, r.text)
-    check("coupon min order", anon.post("/api/coupons/validate", json={"code": f"T{RUN}", "subtotal": 10}).status_code == 400)
+    r = anon.post("/api/coupons/validate", json={"code": f"T{RUN}", "subtotal": 10})
+    check("coupon min order", r.status_code == 200 and r.json()["discount"] == 0 and "more" in r.json()["error"], r.text)
     r = cust.post("/api/orders", json={"customer": customer, "items": [item(1)], "coupon_code": f"T{RUN}"})
     o2 = r.json()
     check("order with coupon", r.status_code == 201 and o2["discount"] == 10 and o2["total"] == 100 - 10 + 79, r.text)
@@ -128,6 +129,40 @@ with TestClient(server.app) as anon:
     evt = json.dumps({"event": "payment.captured", "payload": {"payment": {"entity": {"id": "pay_w", "order_id": "nope"}}}})
     check("webhook signature enforced", anon.post("/api/payments/razorpay/webhook", content=evt, headers={"X-Razorpay-Signature": "x"}).status_code == 400)
 
+    # Coupon rules (codes are stored in capitals)
+    CR = RUN.upper()
+    mk = lambda code, **kw: admin.post("/api/admin/coupons", json={"code": f"{code}{CR}", "discount_type": "percent", "discount_value": 10, **kw})  # noqa: E731
+    val = lambda code, sub=100, em="": anon.post("/api/coupons/validate", json={"code": f"{code}{CR}", "subtotal": sub, "email": em})  # noqa: E731
+    made = [mk("P", discount_value=50, max_discount=30).json(), mk("U", usage_limit=1, per_customer_limit=0).json(),
+            mk("C", per_customer_limit=1).json(), mk("F", first_order_only=True).json(),
+            mk("S", starts_at="2999-01-01T00:00:00Z").json(), mk("H", show_in_cart=False, terms="Valid on prepaid orders only.").json()]
+    check("duplicate coupon code rejected", mk("P").status_code == 409)
+    check("percent discount capped", val("P").json()["discount"] == 30, val("P").text)
+    r = cust.post("/api/orders", json={"customer": customer, "items": [item(1)], "coupon_code": f"U{CR}"})
+    check("usage limit: first use ok", r.status_code == 201, r.text)
+    check("usage limit: then exhausted", val("U").status_code == 400 and "limit" in val("U").json()["detail"])
+    r = cust.post("/api/orders", json={"customer": customer, "items": [item(1)], "coupon_code": f"C{CR}"})
+    check("per-customer: first use ok", r.status_code == 201, r.text)
+    check("per-customer: same email blocked", val("C", em=email.upper()).status_code == 400)
+    check("per-customer: other email ok", val("C", em=f"new-{CR}@example.test").status_code == 200)
+    check("first order only", val("F", em=email).status_code == 400 and val("F", em=f"new-{CR}@example.test").status_code == 200)
+    check("scheduled coupon not active yet", val("S").status_code == 400 and "yet" in val("S").json()["detail"])
+    avail = {c["code"] for c in anon.get("/api/coupons/available").json()}
+    check("private + scheduled hidden from cart list", f"H{CR}" not in avail and f"S{CR}" not in avail and f"P{CR}" in avail)
+    check("private coupon still works, terms returned", val("H").status_code == 200 and val("H").json()["terms"] == "Valid on prepaid orders only.")
+    check("offer needs an existing coupon", admin.post("/api/admin/offers", json={"title": "X", "code": "NOPE-NOT-REAL"}).status_code == 422)
+    banner = admin.post("/api/admin/offers", json={"title": f"B{CR}", "code": f"H{CR}", "show_banner": True}).json()
+    sf_offer = next(o for o in anon.get("/api/storefront").json()["offers"] if o["title"] == f"B{CR}")
+    check("banner carries coupon T&C", sf_offer["code"] == f"H{CR}" and sf_offer["coupon"]["terms"] == "Valid on prepaid orders only.", sf_offer)
+    used = {c["code"]: c["used_count"] for c in admin.get("/api/admin/coupons").json()}
+    check("admin sees usage counts", used.get(f"U{CR}") == 1 and used.get(f"C{CR}") == 1, used)
+    admin.delete(f"/api/admin/coupons/{made[5]['id']}")
+    sf_offer = next(o for o in anon.get("/api/storefront").json()["offers"] if o["title"] == f"B{CR}")
+    check("deleting coupon leaves banner as announcement", sf_offer["code"] == "" and "coupon" not in sf_offer, sf_offer)
+    admin.delete(f"/api/admin/offers/{banner['id']}")
+    for c in made[:5]:
+        admin.delete(f"/api/admin/coupons/{c['id']}")
+
     # Reviews
     r = cust.post(f"/api/products/{pid}/reviews", json={"rating": 5, "body": "Lovely piece"})
     check("verified buyer review", r.status_code == 201 and r.json()["verified"] is True, r.text)
@@ -152,7 +187,7 @@ with TestClient(server.app) as anon:
     check("customer can't use admin API", cust.get("/api/admin/orders").status_code == 403)
 
     # Clean up rows this run created (orders/reviews are kept as history in a real DB; delete test product data)
-    admin.delete(f"/api/admin/offers/{coupon['id']}")
+    admin.delete(f"/api/admin/coupons/{coupon['id']}")
     for rv in admin.get("/api/admin/reviews").json():
         if rv["product_id"] == pid:
             admin.delete(f"/api/admin/reviews/{rv['id']}")

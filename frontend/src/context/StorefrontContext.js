@@ -29,7 +29,6 @@ export function StorefrontProvider({ children }) {
     refresh,
     popupOffer: data.offers.find(o => o.show_popup) || null,
     bannerOffers: data.offers.filter(o => o.show_banner),
-    findCoupon: (code) => data.offers.find(o => o.code && o.code === code?.trim().toUpperCase()) || null,
   }), [data, loading, refresh]);
 
   return <StorefrontContext.Provider value={value}>{children}</StorefrontContext.Provider>;

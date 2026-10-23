@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useProducts } from "./ProductsContext";
-import { useStorefront } from "./StorefrontContext";
+import { api } from "../lib/api";
 import { couponDiscount } from "../lib/format";
 
 const CartContext = createContext(null);
@@ -19,18 +19,44 @@ function loadCart() {
   }
 }
 
+function loadCoupon() {
+  try {
+    const raw = localStorage.getItem(COUPON_KEY);
+    if (!raw) return null;
+    // Older versions stored just the code; its rules are fetched on load.
+    if (!raw.startsWith("{")) return { code: raw, rules: null };
+    const saved = JSON.parse(raw);
+    return saved?.code ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
 const maxFor = (product) => (typeof product?.stock === "number" ? product.stock : 99);
 
 export function CartProvider({ children }) {
   const [items, setItemsState] = useState(loadCart);
   const itemsRef = useRef(items);
   const { products, loading } = useProducts();
-  const { findCoupon } = useStorefront();
-  const [couponCode, setCouponCode] = useState(() => { try { return localStorage.getItem(COUPON_KEY) || ""; } catch { return ""; } });
+  // The applied coupon: its code plus the rules returned by /coupons/validate (null rules = no longer valid).
+  const [applied, setApplied] = useState(loadCoupon);
 
   useEffect(() => {
-    try { couponCode ? localStorage.setItem(COUPON_KEY, couponCode) : localStorage.removeItem(COUPON_KEY); } catch { /* storage unavailable */ }
-  }, [couponCode]);
+    try { applied ? localStorage.setItem(COUPON_KEY, JSON.stringify(applied)) : localStorage.removeItem(COUPON_KEY); } catch { /* storage unavailable */ }
+  }, [applied]);
+
+  // Re-check a remembered coupon once per visit: it may have expired, been used up or changed since.
+  const checked = useRef(false);
+  useEffect(() => {
+    if (checked.current || !applied?.code) return;
+    checked.current = true;
+    api.post("/coupons/validate", { code: applied.code, subtotal: 0 })
+      .then(({ data }) => setApplied({ code: data.code, rules: data }))
+      .catch((err) => { if (err.response?.status === 400) setApplied(a => (a ? { code: a.code, rules: null } : a)); });
+  }, [applied]);
+
+  const applyCoupon = useCallback((data) => setApplied({ code: data.code, rules: data }), []);
+  const setCouponCode = useCallback((code) => { if (!code) setApplied(null); }, []);
 
   // Keep a synchronous copy so actions can compute (and report) results immediately.
   const setItems = useCallback((updater) => {
@@ -55,9 +81,9 @@ export function CartProvider({ children }) {
   const totalPrice = purchasable.reduce((sum, l) => sum + l.product.price * Math.min(l.quantity, l.max), 0);
 
   // The applied coupon is re-evaluated whenever the cart changes (minimum order, % of subtotal).
-  const couponOffer = couponCode ? findCoupon(couponCode) : null;
+  const couponOffer = applied?.rules || null;
   const { discount, error: couponError } = couponDiscount(couponOffer, totalPrice);
-  const coupon = couponCode ? { code: couponCode, offer: couponOffer, discount, error: couponOffer ? couponError : "" } : null;
+  const coupon = applied ? { code: applied.code, offer: couponOffer, discount, error: couponOffer ? couponError : "" } : null;
 
   const addItem = useCallback((product, size, material, quantity = 1) => {
     const key = `${product.id}-${size}-${material}`;
@@ -81,10 +107,10 @@ export function CartProvider({ children }) {
     setItems(prev => (quantity <= 0 ? prev.filter(i => i.key !== key) : prev.map(i => (i.key === key ? { ...i, quantity } : i))));
   }, [setItems]);
 
-  const clearCart = useCallback(() => { setItems([]); setCouponCode(""); }, [setItems]);
+  const clearCart = useCallback(() => { setItems([]); setApplied(null); }, [setItems]);
 
   return (
-    <CartContext.Provider value={{ items, lines, purchasable, loading, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, coupon, discount: coupon && !coupon.error ? discount : 0, setCouponCode }}>
+    <CartContext.Provider value={{ items, lines, purchasable, loading, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, coupon, discount: coupon && !coupon.error ? discount : 0, setCouponCode, applyCoupon }}>
       {children}
     </CartContext.Provider>
   );

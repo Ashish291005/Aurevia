@@ -7,6 +7,7 @@ import { Input } from "../components/Input";
 import ImageField from "../components/ImageField";
 import LinkField from "../components/LinkField";
 import RowActions from "../components/ContentRow";
+import PlacementGuide from "../components/PlacementGuide";
 
 const FIELDS = ["image", "title", "subtitle", "cta_text", "cta_link"];
 const EMPTY = { image: "", title: "", subtitle: "", cta_text: "Shop Now", cta_link: "/shop", active: true };
@@ -53,7 +54,9 @@ export default function Homepage() {
         subtitle={items ? `${activeCount} of ${items.length} slides showing · rotates every 5 seconds` : "The rotating banner at the top of the storefront"}
         actions={<>
           <a href={STORE_URL} target="_blank" rel="noreferrer"><Button variant="secondary">Preview store</Button></a>
-          <Button onClick={() => open(null)} data-testid="add-slide-btn"><Plus className="w-4 h-4" /> Add slide</Button>
+          <Button onClick={() => open(null)} data-testid="add-slide-btn"><Plus className="w-4 h-4" />
+
+      <PlacementGuide items={[{ img: "guide-hero.jpg", title: "Homepage carousel", text: "The big rotating slides at the top of the homepage. They change every few seconds, in the order listed below; the text and button sit on top of the image." }]} /> Add slide</Button>
         </>}
       />
 

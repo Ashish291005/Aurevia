@@ -12,10 +12,26 @@ export function couponDiscount(offer, subtotal) {
   if (subtotal < (offer.min_order || 0)) {
     return { discount: 0, error: `Add ${formatPrice(offer.min_order - subtotal)} more to use ${offer.code}` };
   }
-  const discount = offer.discount_type === "percent"
+  let discount = offer.discount_type === "percent"
     ? Math.round(subtotal * offer.discount_value) / 100
     : Math.min(offer.discount_value, subtotal);
+  if (offer.discount_type === "percent" && offer.max_discount) discount = Math.min(discount, offer.max_discount);
   return { discount, error: "" };
+}
+
+// The conditions customers see under "T&C": the coupon's rules, then the admin's own terms.
+export function couponTerms(c) {
+  if (!c) return [];
+  const per = c.per_customer_limit;
+  return [
+    c.min_order ? `Minimum order value ${formatPrice(c.min_order)}.` : "",
+    c.discount_type === "percent" && c.max_discount ? `Maximum discount ${formatPrice(c.max_discount)}.` : "",
+    c.first_order_only ? "Valid on your first order only." : "",
+    per === 1 ? "Can be used once per customer." : per > 1 ? `Can be used up to ${per} times per customer.` : "",
+    c.ends_at ? `Valid till ${new Date(c.ends_at).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}.` : "",
+    "Cannot be combined with other coupons.",
+    ...(c.terms || "").split("\n").map(t => t.trim()),
+  ].filter(Boolean);
 }
 
 export const RECIPIENTS = [

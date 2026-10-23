@@ -6,6 +6,7 @@ import { Card, PageHeader, EmptyState, Button, ConfirmDialog, Drawer } from "../
 import { Input } from "../components/Input";
 import ImageField from "../components/ImageField";
 import RowActions from "../components/ContentRow";
+import PlacementGuide from "../components/PlacementGuide";
 
 const FIELDS = ["name", "image"];
 const EMPTY = { name: "", image: "", active: true };
@@ -29,7 +30,9 @@ export default function Categories() {
       <PageHeader
         title="Categories"
         subtitle="The square category tiles on the homepage, the shop filters and the footer. Use the arrows to set their order."
-        actions={<Button onClick={() => open(null)} data-testid="add-category-btn"><Plus className="w-4 h-4" /> Add category</Button>}
+        actions={<Button onClick={() => open(null)} data-testid="add-category-btn"><Plus className="w-4 h-4" />
+
+      <PlacementGuide items={[{ img: "guide-categories.jpg", title: "Category circles", text: "The round tiles under \"What are you looking for?\" on the homepage, in the order listed below. Clicking one opens the shop filtered to that category." }]} /> Add category</Button>}
       />
 
       <Card>

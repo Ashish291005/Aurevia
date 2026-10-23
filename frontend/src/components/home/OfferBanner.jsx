@@ -4,6 +4,7 @@ import { Copy, Check, Gift, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { imageUrl } from "../../lib/api";
 import { Countdown } from "../lively";
+import CouponTerms from "../CouponTerms";
 
 const THEMES = [
   "bg-gradient-to-r from-burgundy via-[#6b1d33] to-burgundy-dark text-white",
@@ -51,6 +52,7 @@ export default function OfferBanner({ offer, variant = 0 }) {
           <p className="font-heading text-2xl sm:text-3xl leading-tight">{offer.title}</p>
           {offer.description && <p className={`font-body text-sm mt-1 ${light ? "text-white/75" : "text-stone-600"}`}>{offer.description}</p>}
           {offer.ends_at && <div className="mt-3"><Countdown endsAt={offer.ends_at} light={light} /></div>}
+          {offer.code && offer.coupon && <CouponTerms coupon={offer.coupon} light={light} className="mt-2" />}
         </div>
         <div className="flex flex-wrap items-center gap-4">
           {offer.code && <CouponCode code={offer.code} light={light} />}

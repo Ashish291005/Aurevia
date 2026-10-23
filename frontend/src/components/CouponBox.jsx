@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tag, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "../context/CartContext";
-import { useStorefront } from "../context/StorefrontContext";
 import { api, apiError } from "../lib/api";
 import { formatPrice } from "../lib/format";
+import CouponTerms from "./CouponTerms";
 
 export default function CouponBox() {
-  const { coupon, setCouponCode, totalPrice } = useCart();
-  const { offers } = useStorefront();
+  const { coupon, setCouponCode, applyCoupon, totalPrice } = useCart();
+  const [available, setAvailable] = useState([]);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.get("/coupons/available").then(r => setAvailable(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+  }, []);
 
   const apply = async (value) => {
     const c = value.trim().toUpperCase();
@@ -20,7 +24,8 @@ export default function CouponBox() {
     setError("");
     try {
       const { data } = await api.post("/coupons/validate", { code: c, subtotal: totalPrice });
-      setCouponCode(data.code);
+      if (data.error) { setError(data.error); return; }
+      applyCoupon(data);
       setCode("");
       toast.success(`${data.code} applied — you save ${formatPrice(data.discount)}`);
     } catch (err) {
@@ -45,11 +50,12 @@ export default function CouponBox() {
           </div>
           <button onClick={() => setCouponCode("")} aria-label="Remove coupon" data-testid="coupon-remove" className="p-1 text-stone-500 hover:text-red-600"><X className="w-4 h-4" /></button>
         </div>
+        {coupon.offer && <CouponTerms coupon={coupon.offer} className="mt-1.5" />}
       </div>
     );
   }
 
-  const suggestions = offers.filter(o => o.code);
+  const suggestions = available;
   return (
     <div className="mb-6">
       {/* Not a <form>: on checkout this sits inside the order form, and submitting it would place the order. */}
@@ -66,14 +72,17 @@ export default function CouponBox() {
       {suggestions.length > 0 && (
         <div className="mt-3 space-y-2">
           {suggestions.map(o => (
-            <button key={o.id} type="button" onClick={() => apply(o.code)} disabled={busy}
-              className="w-full flex items-center justify-between gap-3 text-left border border-stone-200 bg-blush/60 hover:border-gold px-3 py-2">
-              <span className="min-w-0">
-                <span className="block text-xs font-body font-bold tracking-wider text-burgundy">{o.code}</span>
-                <span className="block text-[11px] font-body text-stone-600 truncate">{o.title}{o.min_order ? ` · min ${formatPrice(o.min_order)}` : ""}</span>
-              </span>
-              <span className="text-[11px] uppercase tracking-wider font-body font-semibold text-stone-700">Apply</span>
-            </button>
+            <div key={o.code} className="border border-stone-200 bg-blush/60 px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="block text-xs font-body font-bold tracking-wider text-burgundy">{o.code}</span>
+                  <span className="block text-[11px] font-body text-stone-600 truncate">{o.description || (o.discount_type === "percent" ? `${o.discount_value}% off` : `${formatPrice(o.discount_value)} off`)}{o.min_order ? ` · min ${formatPrice(o.min_order)}` : ""}</span>
+                </span>
+                <button type="button" onClick={() => apply(o.code)} disabled={busy}
+                  className="text-[11px] uppercase tracking-wider font-body font-semibold text-stone-700 hover:text-burgundy disabled:opacity-50">Apply</button>
+              </div>
+              <CouponTerms coupon={o} className="mt-1" />
+            </div>
           ))}
         </div>
       )}

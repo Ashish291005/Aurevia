@@ -16,6 +16,45 @@ export const moneyCompact = (n) => {
   return money(v);
 };
 
+const shortDate = (iso) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
+
+// One-line rule summary for lists; with asTerms, the same rules as the bullet points customers see
+// (kept in step with couponTerms in the storefront's lib/format.js).
+export function couponSummary(c, { asTerms = false } = {}) {
+  if (!c) return asTerms ? [] : "";
+  const amount = c.discount_type === "percent" ? `${c.discount_value}% off` : `${money(c.discount_value)} off`;
+  const per = c.per_customer_limit;
+  if (asTerms) {
+    return [
+      c.min_order ? `Minimum order value ${money(c.min_order)}.` : "",
+      c.discount_type === "percent" && c.max_discount ? `Maximum discount ${money(c.max_discount)}.` : "",
+      c.first_order_only ? "Valid on your first order only." : "",
+      per === 1 ? "Can be used once per customer." : per > 1 ? `Can be used up to ${per} times per customer.` : "",
+      c.ends_at ? `Valid till ${shortDate(c.ends_at)}.` : "",
+      "Cannot be combined with other coupons.",
+      ...(c.terms || "").split("\n").map(t => t.trim()),
+    ].filter(Boolean);
+  }
+  return [
+    amount + (c.discount_type === "percent" && c.max_discount ? ` (max ${money(c.max_discount)})` : ""),
+    c.min_order ? `min order ${money(c.min_order)}` : "",
+    c.first_order_only ? "first order only" : "",
+    per ? `${per}× per customer` : "",
+    c.usage_limit ? `${c.usage_limit} uses total` : "",
+    c.starts_at && new Date(c.starts_at) > new Date() ? `starts ${shortDate(c.starts_at)}` : "",
+    c.ends_at ? `ends ${shortDate(c.ends_at)}` : "",
+  ].filter(Boolean).join(" · ");
+}
+
+export function couponStatus(c) {
+  const now = new Date();
+  if (!c.active) return "Off";
+  if (c.ends_at && new Date(c.ends_at) <= now) return "Expired";
+  if (c.starts_at && new Date(c.starts_at) > now) return "Scheduled";
+  if (c.usage_limit && c.used_count >= c.usage_limit) return "Used up";
+  return "Active";
+}
+
 export const RECIPIENTS = [
   { value: "her", label: "For Her" },
   { value: "him", label: "For Him" },

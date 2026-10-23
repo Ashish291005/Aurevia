@@ -785,13 +785,11 @@ class ReorderInput(BaseModel):
     ids: List[str] = Field(min_length=1, max_length=500)
 
 
-def validate_offer(doc: dict) -> dict:
-    if doc["code"] and (doc["discount_type"] == "none" or doc["discount_value"] <= 0):
-        raise HTTPException(status_code=422, detail="A coupon code needs a discount (percentage or flat amount).")
-    if doc["discount_type"] == "percent" and doc["discount_value"] > 90:
-        raise HTTPException(status_code=422, detail="Percentage discounts can be at most 90%.")
-    if not doc["code"]:
-        doc.update({"discount_type": "none", "discount_value": 0, "min_order": 0})
+async def validate_offer(doc: dict) -> dict:
+    # Offers only *display* a coupon; its rules live on the Coupons page.
+    if doc["code"] and not await db.coupons.find_one({"code": doc["code"]}, {"_id": 1}):
+        raise HTTPException(status_code=422, detail=f"There's no coupon {doc['code']}. Create it on the Coupons page first.")
+    doc.update({"discount_type": "none", "discount_value": 0, "min_order": 0})
     return doc
 
 
@@ -822,9 +820,7 @@ async def prepare_content(kind: str, data: BaseModel, current: Optional[dict] = 
     if kind == "categories" and any(x["name"].lower() == doc["name"].lower() for x in others):
         raise HTTPException(status_code=409, detail=f"A category called '{doc['name']}' already exists.")
     if kind == "offers":
-        validate_offer(doc)
-        if doc["code"] and any(x.get("code") == doc["code"] for x in others):
-            raise HTTPException(status_code=409, detail=f"Coupon code {doc['code']} is already used by another offer.")
+        await validate_offer(doc)
     return doc
 
 
@@ -890,42 +886,199 @@ async def storefront():
     categories = await list_content("categories", only_active=True)
     for c in categories:
         c["product_count"] = await db.products.count_documents({"category": c["name"], **PUBLIC_PRODUCTS})
-    return {
-        "slides": await list_content("slides", only_active=True),
-        "categories": categories,
-        "offers": await list_content("offers", only_active=True),
-    }
+    offers = await list_content("offers", only_active=True)
+    for o in offers:
+        # Show a code only while its coupon can actually be used; otherwise the offer is an announcement.
+        c = await db.coupons.find_one({"code": o["code"]}, {"_id": 0}) if o.get("code") else None
+        if c and coupon_live(c) and not await coupon_used_up(c):
+            o["coupon"] = public_coupon(c)
+        else:
+            o["code"] = ""
+    return {"slides": await list_content("slides", only_active=True), "categories": categories, "offers": offers}
 
 
 # ---------- Coupons ----------
+# Codes and their rules. Offers (banners/popup) can display one; checkout applies them.
+
+def _utc_iso(v: Optional[str], label: str) -> Optional[str]:
+    if not v:
+        return None
+    try:
+        dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+    except ValueError:
+        raise ValueError(f"{label} must be a valid date and time")
+    return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).astimezone(timezone.utc).isoformat()
+
+
+class CouponDocInput(BaseModel):
+    code: str = Field(min_length=3, max_length=30)
+    description: str = Field(default="", max_length=120)
+    discount_type: Literal["percent", "flat"] = "percent"
+    discount_value: float = Field(gt=0)
+    max_discount: float = Field(default=0, ge=0)          # percent only; 0 = no cap
+    min_order: float = Field(default=0, ge=0)
+    starts_at: Optional[str] = Field(default=None, max_length=40)
+    ends_at: Optional[str] = Field(default=None, max_length=40)
+    usage_limit: int = Field(default=0, ge=0)             # total uses; 0 = unlimited
+    per_customer_limit: int = Field(default=1, ge=0)      # per email; 0 = unlimited
+    first_order_only: bool = False
+    show_in_cart: bool = True                             # suggested in cart/checkout; off = private code
+    terms: str = Field(default="", max_length=2000)
+    active: bool = True
+
+    @field_validator("code")
+    @classmethod
+    def clean_code(cls, v: str) -> str:
+        v = v.strip().upper()
+        if not re.match(r"^[A-Z0-9_-]{3,30}$", v):
+            raise ValueError("Coupon codes use 3-30 letters, numbers, - or _")
+        return v
+
+    @field_validator("starts_at")
+    @classmethod
+    def check_starts(cls, v):
+        return _utc_iso(v, "Start date")
+
+    @field_validator("ends_at")
+    @classmethod
+    def check_ends(cls, v):
+        return _utc_iso(v, "End date")
+
+
+def coupon_live(c: dict) -> bool:
+    now = now_iso()
+    return c.get("active", True) and not (c.get("starts_at") and c["starts_at"] > now) and not (c.get("ends_at") and c["ends_at"] <= now)
+
+
+async def coupon_used_count(code: str, email: Optional[str] = None) -> int:
+    flt = {"coupon.code": code, "status": {"$ne": "cancelled"}}
+    if email:
+        flt["customer.email"] = email.strip().lower()
+    return await db.orders.count_documents(flt)
+
+
+async def coupon_used_up(c: dict) -> bool:
+    return bool(c.get("usage_limit")) and await coupon_used_count(c["code"]) >= c["usage_limit"]
+
+
+def public_coupon(c: dict) -> dict:
+    return {k: c.get(k) for k in ("code", "description", "discount_type", "discount_value", "max_discount", "min_order",
+                                  "ends_at", "first_order_only", "per_customer_limit", "terms")}
+
+
+async def find_coupon(code: str, email: str = "") -> dict:
+    """The coupon if this customer may use it now; otherwise a 400 saying why. Minimum order is checked separately."""
+    c = await db.coupons.find_one({"code": code.strip().upper()}, {"_id": 0})
+    now = now_iso()
+    if not c or not c.get("active", True) or (c.get("ends_at") and c["ends_at"] <= now):
+        raise HTTPException(status_code=400, detail="This coupon code isn't valid or has expired.")
+    if c.get("starts_at") and c["starts_at"] > now:
+        raise HTTPException(status_code=400, detail=f"{c['code']} isn't active yet.")
+    if await coupon_used_up(c):
+        raise HTTPException(status_code=400, detail=f"{c['code']} has reached its usage limit.")
+    email = (email or "").strip().lower()
+    if email:
+        if c.get("first_order_only") and await db.orders.count_documents({"customer.email": email, "status": {"$ne": "cancelled"}}):
+            raise HTTPException(status_code=400, detail=f"{c['code']} is only for your first order.")
+        limit = c.get("per_customer_limit", 0)
+        if limit and await coupon_used_count(c["code"], email) >= limit:
+            raise HTTPException(status_code=400, detail=f"You've already used {c['code']}" + (" the maximum number of times." if limit > 1 else "."))
+    return c
+
+
+def coupon_discount(c: dict, subtotal: float) -> float:
+    if subtotal < c.get("min_order", 0):
+        short = c["min_order"] - subtotal
+        raise HTTPException(status_code=400, detail=f"Add ₹{short:,.0f} more to use {c['code']} (minimum order ₹{c['min_order']:,.0f}).")
+    if c["discount_type"] == "percent":
+        d = round(subtotal * c["discount_value"] / 100, 2)
+        return min(d, c["max_discount"]) if c.get("max_discount") else d
+    return round(min(c["discount_value"], subtotal), 2)
+
 
 class CouponInput(BaseModel):
     code: str = Field(min_length=1, max_length=30)
     subtotal: float = Field(ge=0)
-
-
-async def find_coupon(code: str) -> dict:
-    offer = await db.offers.find_one({"code": code.strip().upper(), "active": True}, {"_id": 0})
-    if not offer or offer_expired(offer):
-        raise HTTPException(status_code=400, detail="This coupon code isn't valid or has expired.")
-    return offer
-
-
-def coupon_discount(offer: dict, subtotal: float) -> float:
-    if subtotal < offer.get("min_order", 0):
-        short = offer["min_order"] - subtotal
-        raise HTTPException(status_code=400, detail=f"Add ₹{short:,.0f} more to use {offer['code']} (minimum order ₹{offer['min_order']:,.0f}).")
-    if offer["discount_type"] == "percent":
-        return round(subtotal * offer["discount_value"] / 100, 2)
-    return round(min(offer["discount_value"], subtotal), 2)
+    email: str = Field(default="", max_length=200)
 
 
 @api_router.post("/coupons/validate")
 async def validate_coupon(input_data: CouponInput):
-    offer = await find_coupon(input_data.code)
-    discount = coupon_discount(offer, input_data.subtotal)
-    return {"code": offer["code"], "title": offer["title"], "discount": discount,
-            "discount_type": offer["discount_type"], "discount_value": offer["discount_value"], "min_order": offer["min_order"]}
+    c = await find_coupon(input_data.code, input_data.email)
+    try:
+        discount, error = coupon_discount(c, input_data.subtotal), ""
+    except HTTPException as e:
+        # Below the minimum: still return the rules so the cart can show how much more to add.
+        discount, error = 0.0, e.detail
+    return {**public_coupon(c), "discount": discount, "error": error}
+
+
+@api_router.get("/coupons/available")
+async def available_coupons():
+    """Codes suggested in the cart and at checkout."""
+    out = []
+    for c in await db.coupons.find({"active": True, "show_in_cart": True}, {"_id": 0}).sort("created_at", 1).to_list(100):
+        if coupon_live(c) and not await coupon_used_up(c):
+            out.append(public_coupon(c))
+    return out
+
+
+async def prepare_coupon(data: CouponDocInput, current: Optional[dict] = None) -> dict:
+    doc = data.model_dump()
+    doc["description"], doc["terms"] = doc["description"].strip(), doc["terms"].strip()
+    if doc["discount_type"] == "percent":
+        if doc["discount_value"] > 90:
+            raise HTTPException(status_code=422, detail="Percentage discounts can be at most 90%.")
+    else:
+        doc["max_discount"] = 0
+    if doc["starts_at"] and doc["ends_at"] and doc["ends_at"] <= doc["starts_at"]:
+        raise HTTPException(status_code=422, detail="The end date must be after the start date.")
+    clash = await db.coupons.find_one({"code": doc["code"]}, {"_id": 0, "id": 1})
+    if clash and (not current or clash["id"] != current["id"]):
+        raise HTTPException(status_code=409, detail=f"A coupon {doc['code']} already exists.")
+    return doc
+
+
+async def with_usage(c: dict) -> dict:
+    return {**c, "used_count": await coupon_used_count(c["code"])}
+
+
+@api_router.get("/admin/coupons")
+async def admin_coupons(admin: dict = Depends(require_admin)):
+    return [await with_usage(c) for c in await db.coupons.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)]
+
+
+@api_router.post("/admin/coupons", status_code=201)
+async def admin_create_coupon(input_data: CouponDocInput, admin: dict = Depends(require_admin)):
+    doc = await prepare_coupon(input_data)
+    doc.update({"id": uuid.uuid4().hex, "created_at": now_iso(), "updated_at": now_iso()})
+    await db.coupons.insert_one(doc)
+    doc.pop("_id", None)
+    return await with_usage(doc)
+
+
+@api_router.put("/admin/coupons/{coupon_id}")
+async def admin_update_coupon(coupon_id: str, input_data: CouponDocInput, admin: dict = Depends(require_admin)):
+    current = await db.coupons.find_one({"id": coupon_id}, {"_id": 0})
+    if not current:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    doc = await prepare_coupon(input_data, current)
+    await db.coupons.update_one({"id": coupon_id}, {"$set": {**doc, "updated_at": now_iso()}})
+    if doc["code"] != current["code"]:
+        # Banners showing the old code follow the rename.
+        await db.offers.update_many({"code": current["code"]}, {"$set": {"code": doc["code"]}})
+    return await with_usage(await db.coupons.find_one({"id": coupon_id}, {"_id": 0}))
+
+
+@api_router.delete("/admin/coupons/{coupon_id}")
+async def admin_delete_coupon(coupon_id: str, admin: dict = Depends(require_admin)):
+    current = await db.coupons.find_one({"id": coupon_id}, {"_id": 0})
+    if not current:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    await db.coupons.delete_one({"id": coupon_id})
+    # Banners that showed it become plain announcements; past orders keep their discount.
+    await db.offers.update_many({"code": current["code"]}, {"$set": {"code": ""}})
+    return {"message": "Coupon deleted"}
 
 
 # ---------- Orders ----------
@@ -1022,9 +1175,9 @@ async def place_order(input_data: OrderInput, request: Request):
     discount, coupon = 0.0, None
     if input_data.coupon_code.strip():
         try:
-            offer = await find_coupon(input_data.coupon_code)
-            discount = coupon_discount(offer, subtotal)
-            coupon = {"code": offer["code"], "title": offer["title"]}
+            c = await find_coupon(input_data.coupon_code, input_data.customer.email)
+            discount = coupon_discount(c, subtotal)
+            coupon = {"code": c["code"], "title": c.get("description") or c["code"]}
         except HTTPException:
             await restock(reserved)
             raise
@@ -1465,6 +1618,25 @@ async def seed_storefront():
         await db.offers.insert_many([{**o, "id": uuid.uuid4().hex, "active": True, "position": i, "created_at": ts} for i, o in enumerate(offers)])
 
 
+async def migrate_coupons():
+    # Coupons used to live on offers. Give each offer code its own coupon once, with the same rules.
+    if await db.coupons.count_documents({}):
+        return
+    ts = now_iso()
+    async for o in db.offers.find({"code": {"$ne": ""}}, {"_id": 0}):
+        if not o.get("code") or o.get("discount_type") not in ("percent", "flat") or await db.coupons.find_one({"code": o["code"]}, {"_id": 1}):
+            continue
+        welcome = o["code"].startswith("WELCOME")
+        await db.coupons.insert_one({
+            "id": uuid.uuid4().hex, "code": o["code"], "description": o.get("title", ""),
+            "discount_type": o["discount_type"], "discount_value": o["discount_value"], "max_discount": 0,
+            "min_order": o.get("min_order", 0), "starts_at": None, "ends_at": o.get("ends_at"),
+            "usage_limit": 0, "per_customer_limit": 1 if welcome else 0, "first_order_only": welcome,
+            "show_in_cart": True, "terms": "", "active": o.get("active", True), "created_at": ts, "updated_at": ts,
+        })
+        logger.info(f"Created coupon {o['code']} from its offer")
+
+
 @app.on_event("startup")
 async def startup():
     if DB_BACKEND == "postgres":
@@ -1476,9 +1648,11 @@ async def startup():
     await db.products.create_index("id", unique=True)
     await db.orders.create_index("id", unique=True)
     await db.orders.create_index("number", unique=True)
+    await db.coupons.create_index("code", unique=True)
     await seed_admin()
     await seed_products()
     await seed_storefront()
+    await migrate_coupons()
     await migrate_messages()
 
 

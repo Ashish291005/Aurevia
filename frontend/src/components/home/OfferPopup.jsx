@@ -6,6 +6,7 @@ import { useStorefront } from "../../context/StorefrontContext";
 import { imageUrl } from "../../lib/api";
 import { CouponCode } from "./OfferBanner";
 import { Countdown } from "../lively";
+import CouponTerms from "../CouponTerms";
 
 const SEEN_KEY = "aurevia_offer_popup_seen";
 const HIDDEN_ON = ["/checkout", "/order-confirmation", "/login", "/register"];
@@ -59,7 +60,7 @@ export default function OfferPopup() {
           <p className="text-[11px] tracking-[0.25em] uppercase font-semibold text-gold font-body mb-2">Exclusive offer</p>
           <h2 id="offer-popup-title" className="font-heading text-3xl sm:text-4xl text-stone-900 leading-tight mb-3">{o.title}</h2>
           {o.description && <p className="font-body text-sm text-stone-600 mb-5">{o.description}</p>}
-          {o.code && <div className="mb-4"><CouponCode code={o.code} /></div>}
+          {o.code && <div className="mb-4"><CouponCode code={o.code} />{o.coupon && <CouponTerms coupon={o.coupon} className="mt-2" />}</div>}
           {o.ends_at && <div className="mb-5"><Countdown endsAt={o.ends_at} /></div>}
           <button onClick={() => { close(); if (o.cta_link) navigate(o.cta_link); }} data-testid="offer-popup-cta"
             className="bg-burgundy text-white px-8 py-3.5 text-xs tracking-[0.2em] uppercase font-body font-semibold hover:bg-burgundy-dark transition-colors">
