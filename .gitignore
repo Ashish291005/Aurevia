@@ -22,3 +22,7 @@ backend/uploads/*
 .claude/
 .DS_Store
 *.log
+
+# Hostinger build output (scripts/build_hostinger.py)
+hostinger-upload/
+aurevia-hostinger.zip

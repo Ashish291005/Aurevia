@@ -5,6 +5,7 @@ from fastapi import FastAPI, APIRouter, Request, HTTPException, Response, Depend
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+import contextvars
 import os
 import re
 import json
@@ -1364,8 +1365,32 @@ async def root():
 app.include_router(api_router)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
+_cors_host = contextvars.ContextVar("cors_host", default="")
+
+
+class SiteCORSMiddleware(CORSMiddleware):
+    """Also allows the site's own domain when the API is reached at api.<domain>.
+
+    Used when the shop's files are hosted elsewhere (e.g. Hostinger at aurevia.in) and call this backend at
+    api.aurevia.in. Same registrable domain, so the auth cookies stay first-party, including on Safari.
+    """
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            # The real Host (not X-Forwarded-Host, which a client can set). Decided per request, never cached.
+            host = next((v.decode("latin-1") for k, v in scope["headers"] if k == b"host"), "")
+            _cors_host.set(host.split(":")[0].strip().lower())
+        await super().__call__(scope, receive, send)
+
+    def is_allowed_origin(self, origin: str) -> bool:
+        host = _cors_host.get()
+        if host.startswith("api.") and origin.lower() in (f"https://{host[4:]}", f"https://www.{host[4:]}"):
+            return True
+        return super().is_allowed_origin(origin)
+
+
 app.add_middleware(
-    CORSMiddleware,
+    SiteCORSMiddleware,
     allow_origins=[os.environ.get("FRONTEND_URL", "http://localhost:3000"), os.environ.get("ADMIN_URL", "http://localhost:3001")],
     allow_credentials=True,
     allow_methods=["*"],

@@ -2,7 +2,11 @@ import axios from "axios";
 
 // Empty REACT_APP_BACKEND_URL = same origin (the CRA dev server proxies /api and /uploads to the backend),
 // which keeps the auth cookies first-party.
-export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
+// REACT_APP_API_SUBDOMAIN=api (the Hostinger build) = backend at api.<this site's domain>, e.g. the shop at
+// aurevia.in talks to api.aurevia.in; same domain, so cookies still count as first-party.
+const siteDomain = () => window.location.hostname.replace(/^www\./, "");
+export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
+  || (process.env.REACT_APP_API_SUBDOMAIN ? `https://${process.env.REACT_APP_API_SUBDOMAIN}.${siteDomain()}` : "");
 export const API = `${BACKEND_URL}/api`;
 
 export const api = axios.create({ baseURL: API, withCredentials: true });

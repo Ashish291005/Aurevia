@@ -1,7 +1,10 @@
 import axios from "axios";
 
 // The Vite dev server proxies /api and /uploads to the backend (see vite.config.js).
-export const api = axios.create({ baseURL: "/api", withCredentials: true });
+// VITE_API_SUBDOMAIN=api (the Hostinger build) = backend at api.<this site's domain>, same as the storefront.
+const sub = import.meta.env.VITE_API_SUBDOMAIN;
+export const API_ORIGIN = sub ? `https://${sub}.${window.location.hostname.replace(/^www\./, "")}` : "";
+export const api = axios.create({ baseURL: `${API_ORIGIN}/api`, withCredentials: true });
 
 // Public storefront, used for "View in store" links.
 // Locally the storefront runs on :3000; in production it shares the admin's domain (admin lives at /admin).
