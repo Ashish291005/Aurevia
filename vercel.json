@@ -1,18 +1,27 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": [
+    "syd1"
+  ],
   "services": {
     "frontend": {
       "root": "frontend",
       "framework": "create-react-app",
       "rewrites": [
-        { "source": "/(.*)", "destination": "/index.html" }
+        {
+          "source": "/(.*)",
+          "destination": "/index.html"
+        }
       ]
     },
     "admin": {
       "root": "admin",
       "framework": "vite",
       "rewrites": [
-        { "source": "/admin/(.*)", "destination": "/admin/index.html" }
+        {
+          "source": "/admin/(.*)",
+          "destination": "/admin/index.html"
+        }
       ]
     },
     "aurevia-api": {
@@ -22,12 +31,36 @@
     }
   },
   "redirects": [
-    { "source": "/admin", "destination": "/admin/", "permanent": false }
+    {
+      "source": "/admin",
+      "destination": "/admin/",
+      "permanent": false
+    }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": { "service": "aurevia-api" } },
-    { "source": "/uploads/(.*)", "destination": { "service": "aurevia-api" } },
-    { "source": "/admin/(.*)", "destination": { "service": "admin" } },
-    { "source": "/(.*)", "destination": { "service": "frontend" } }
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "aurevia-api"
+      }
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": {
+        "service": "aurevia-api"
+      }
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": {
+        "service": "admin"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
+    }
   ]
 }

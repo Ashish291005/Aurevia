@@ -5,6 +5,7 @@ from fastapi import FastAPI, APIRouter, Request, HTTPException, Response, Depend
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+import asyncio
 import contextvars
 import os
 import re
@@ -21,6 +22,7 @@ import httpx
 from pathlib import Path
 from typing import Annotated, List, Optional, Literal
 from pydantic import AfterValidator, BaseModel, Field, field_validator
+from collections import Counter
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 
@@ -883,18 +885,27 @@ for _kind in CONTENT:
 
 @api_router.get("/storefront")
 async def storefront():
-    categories = await list_content("categories", only_active=True)
+    # A handful of queries run together (the homepage waits on this): one per collection, not one per item.
+    slides, categories, offers, products, coupons = await asyncio.gather(
+        list_content("slides", only_active=True),
+        list_content("categories", only_active=True),
+        list_content("offers", only_active=True),
+        db.products.find(PUBLIC_PRODUCTS, {"_id": 0, "category": 1}).to_list(5000),
+        db.coupons.find({"active": True}, {"_id": 0}).to_list(500),
+    )
+    counts = Counter(p.get("category") for p in products)
     for c in categories:
-        c["product_count"] = await db.products.count_documents({"category": c["name"], **PUBLIC_PRODUCTS})
-    offers = await list_content("offers", only_active=True)
+        c["product_count"] = counts.get(c["name"], 0)
+    by_code = {c["code"]: c for c in coupons}
+    shown = {o["code"] for o in offers if o.get("code") in by_code and coupon_live(by_code[o["code"]])}
+    used_up = dict(zip(shown, await asyncio.gather(*(coupon_used_up(by_code[code]) for code in shown))))
     for o in offers:
         # Show a code only while its coupon can actually be used; otherwise the offer is an announcement.
-        c = await db.coupons.find_one({"code": o["code"]}, {"_id": 0}) if o.get("code") else None
-        if c and coupon_live(c) and not await coupon_used_up(c):
-            o["coupon"] = public_coupon(c)
+        if o.get("code") in shown and not used_up[o["code"]]:
+            o["coupon"] = public_coupon(by_code[o["code"]])
         else:
             o["code"] = ""
-    return {"slides": await list_content("slides", only_active=True), "categories": categories, "offers": offers}
+    return {"slides": slides, "categories": categories, "offers": offers}
 
 
 # ---------- Coupons ----------
