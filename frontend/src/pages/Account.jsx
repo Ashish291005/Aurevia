@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { ChevronDown, Loader2, Package, User, Lock, LogOut } from "lucide-react";
+import { ChevronDown, Loader2, Package, User, Lock, LogOut, MapPin, Plus, Pencil, Trash2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { useProducts } from "../context/ProductsContext";
 import { Input } from "../components/ui/input";
 import OrderDetails, { StatusBadge } from "../components/OrderDetails";
+import AddressForm, { addressLine } from "../components/AddressForm";
 import { api, apiError } from "../lib/api";
 import { formatDate, formatPrice } from "../lib/format";
 import { useLiveRefresh, usePageTitle } from "../lib/hooks";
@@ -13,6 +14,7 @@ import { useLiveRefresh, usePageTitle } from "../lib/hooks";
 const TABS = [
   { key: "orders", label: "Orders", Icon: Package },
   { key: "profile", label: "Profile", Icon: User },
+  { key: "addresses", label: "Addresses", Icon: MapPin },
   { key: "security", label: "Password", Icon: Lock },
 ];
 
@@ -144,6 +146,72 @@ function ProfileTab() {
   );
 }
 
+function AddressesTab() {
+  const [list, setList] = useState(null);
+  const [editing, setEditing] = useState(null); // null | {} (new) | address
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(() => {
+    api.get("/account/addresses").then(r => setList(r.data)).catch(err => { toast.error(apiError(err, "Could not load addresses")); setList([]); });
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const save = async (form) => {
+    setSaving(true);
+    try {
+      if (editing?.id) await api.put(`/account/addresses/${editing.id}`, form);
+      else await api.post("/account/addresses", form);
+      toast.success("Address saved");
+      setEditing(null);
+      load();
+    } catch (err) {
+      toast.error(apiError(err, "Could not save the address"));
+    } finally {
+      setSaving(false);
+    }
+  };
+  const remove = async (a) => {
+    if (!window.confirm(`Delete the address "${a.label || "Other"}"?`)) return;
+    try { setList((await api.delete(`/account/addresses/${a.id}`)).data); toast.success("Address deleted"); }
+    catch (err) { toast.error(apiError(err, "Could not delete the address")); }
+  };
+  const makeDefault = (a) => api.put(`/account/addresses/${a.id}`, { ...a, is_default: true }).then(load).catch(err => toast.error(apiError(err, "Could not update")));
+
+  if (list === null) return <p className="py-12 text-center text-sm text-stone-500 font-body">Loading your addresses...</p>;
+  if (editing) return <div className="max-w-2xl"><AddressForm initial={editing} onSave={save} onCancel={() => setEditing(null)} saving={saving} /></div>;
+
+  return (
+    <div className="space-y-4 max-w-3xl" data-testid="addresses-tab">
+      <p className="text-sm text-stone-500 font-body">Saved addresses appear at checkout so you can pick one in a tap. Up to 10.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {list.map(a => (
+          <div key={a.id} className={`bg-white border p-5 font-body ${a.is_default ? "border-gold" : "border-stone-200"}`} data-testid="address-card">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-burgundy">{a.label || "Other"}</span>
+              {a.is_default && <span className="text-[10px] uppercase tracking-wider font-semibold bg-gold/15 text-[#7a5d22] px-2 py-0.5">Default</span>}
+            </div>
+            <p className="text-sm font-semibold text-stone-900">{a.first_name} {a.last_name}</p>
+            <p className="text-sm text-stone-600 mt-0.5">{addressLine(a)}</p>
+            <p className="text-sm text-stone-600">{a.phone}</p>
+            <div className="flex flex-wrap gap-4 mt-4 text-xs uppercase tracking-wider font-semibold">
+              <button onClick={() => setEditing(a)} className="flex items-center gap-1.5 text-stone-600 hover:text-burgundy"><Pencil className="w-3.5 h-3.5" /> Edit</button>
+              {!a.is_default && <button onClick={() => makeDefault(a)} className="flex items-center gap-1.5 text-stone-600 hover:text-burgundy"><Star className="w-3.5 h-3.5" /> Make default</button>}
+              <button onClick={() => remove(a)} className="flex items-center gap-1.5 text-stone-500 hover:text-red-700"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+            </div>
+          </div>
+        ))}
+        {list.length < 10 && (
+          <button onClick={() => setEditing({})} data-testid="add-address"
+            className="min-h-[160px] border-2 border-dashed border-stone-300 hover:border-gold flex flex-col items-center justify-center gap-2 text-stone-500 hover:text-burgundy font-body">
+            <Plus className="w-6 h-6" />
+            <span className="text-xs uppercase tracking-[0.15em] font-semibold">Add a new address</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SecurityTab() {
   const { user, updateUser } = useAuth();
   // Accounts created with Google have no password yet; they can add one to also sign in with email.
@@ -226,6 +294,7 @@ export default function Account() {
 
         {tab === "orders" && <OrdersTab />}
         {tab === "profile" && <ProfileTab />}
+        {tab === "addresses" && <AddressesTab />}
         {tab === "security" && <SecurityTab />}
       </div>
     </div>

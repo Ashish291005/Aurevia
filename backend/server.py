@@ -366,6 +366,101 @@ async def update_me(input_data: ProfileInput, request: Request):
     return public_user(user)
 
 
+# ---------- Saved addresses (address book on the customer's account) ----------
+
+MAX_ADDRESSES = 10
+
+
+class AddressInput(BaseModel):
+    label: str = Field(default="Home", max_length=30)
+    first_name: str = Field(min_length=1, max_length=60)
+    last_name: str = Field(min_length=1, max_length=60)
+    phone: str = Field(min_length=10, max_length=16)
+    address: str = Field(min_length=1, max_length=200)
+    city: str = Field(min_length=1, max_length=80)
+    state: str = Field(min_length=1, max_length=60)
+    zip: str = Field(min_length=6, max_length=6)
+    is_default: bool = False
+
+    @field_validator("phone")
+    @classmethod
+    def check_phone(cls, v: str) -> str:
+        v = v.strip()
+        if not re.match(r"^(\+91[\s-]?)?[6-9][0-9]{4}[\s-]?[0-9]{5}$", v):
+            raise ValueError("Enter a 10-digit Indian mobile number")
+        return v
+
+    @field_validator("zip")
+    @classmethod
+    def check_zip(cls, v: str) -> str:
+        if not re.match(r"^[1-9][0-9]{5}$", v.strip()):
+            raise ValueError("Enter a 6-digit PIN code")
+        return v.strip()
+
+
+def _clean_address(data: AddressInput) -> dict:
+    doc = data.model_dump()
+    return {k: v.strip() if isinstance(v, str) else v for k, v in doc.items()}
+
+
+async def _save_addresses(user: dict, addresses: List[dict]) -> List[dict]:
+    # Exactly one default whenever there are addresses.
+    if addresses and not any(a.get("is_default") for a in addresses):
+        addresses[0]["is_default"] = True
+    await db.users.update_one({"_id": user["_id"]}, {"$set": {"addresses": addresses}})
+    return addresses
+
+
+@api_router.get("/account/addresses")
+async def list_addresses(request: Request):
+    return (await get_current_user(request)).get("addresses", [])
+
+
+@api_router.post("/account/addresses", status_code=201)
+async def add_address(input_data: AddressInput, request: Request):
+    user = await get_current_user(request)
+    addresses = user.get("addresses", [])
+    doc = _clean_address(input_data)
+    # The same address saved again (e.g. from checkout) just becomes the latest; no duplicates.
+    same = lambda a: all(a.get(k, "").lower() == doc[k].lower() for k in ("address", "city", "zip", "phone"))  # noqa: E731
+    existing = next((a for a in addresses if same(a)), None)
+    if existing:
+        return existing
+    if len(addresses) >= MAX_ADDRESSES:
+        raise HTTPException(status_code=400, detail=f"You can save up to {MAX_ADDRESSES} addresses. Delete one first.")
+    doc["id"] = uuid.uuid4().hex
+    if doc["is_default"]:
+        for a in addresses:
+            a["is_default"] = False
+    addresses.append(doc)
+    await _save_addresses(user, addresses)
+    return doc
+
+
+@api_router.put("/account/addresses/{address_id}")
+async def update_address(address_id: str, input_data: AddressInput, request: Request):
+    user = await get_current_user(request)
+    addresses = user.get("addresses", [])
+    current = next((a for a in addresses if a["id"] == address_id), None)
+    if not current:
+        raise HTTPException(status_code=404, detail="Address not found")
+    current.update(_clean_address(input_data))
+    if current["is_default"]:
+        for a in addresses:
+            a["is_default"] = a["id"] == address_id
+    await _save_addresses(user, addresses)
+    return current
+
+
+@api_router.delete("/account/addresses/{address_id}")
+async def delete_address(address_id: str, request: Request):
+    user = await get_current_user(request)
+    addresses = [a for a in user.get("addresses", []) if a["id"] != address_id]
+    if len(addresses) == len(user.get("addresses", [])):
+        raise HTTPException(status_code=404, detail="Address not found")
+    return await _save_addresses(user, addresses)
+
+
 @api_router.post("/auth/change-password")
 async def change_password(input_data: ChangePasswordInput, request: Request):
     user = await get_current_user(request)

@@ -10,15 +10,16 @@ import { useSettings } from "../context/SettingsContext";
 import { Input } from "../components/ui/input";
 import { Separator } from "../components/ui/separator";
 import { api, apiError, imageUrl } from "../lib/api";
-import { formatPrice } from "../lib/format";
+import { INDIAN_STATES, formatPrice } from "../lib/format";
 import { usePageTitle } from "../lib/hooks";
 import CouponBox from "../components/CouponBox";
 import GoogleSignIn from "../components/GoogleSignIn";
+import { addressLine } from "../components/AddressForm";
 
 const SAVED_KEY = "aurevia_checkout_address";
 const EMPTY = { first_name: "", last_name: "", email: "", phone: "", address: "", city: "", state: "", zip: "", country: "India" };
 
-const STATES = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"];
+
 
 // Loads Razorpay's checkout script once, on demand.
 function loadRazorpay() {
@@ -59,6 +60,10 @@ export default function Checkout() {
   const [notes, setNotes] = useState("");
   const [payConfig, setPayConfig] = useState({ razorpay_enabled: false });
   const [payment, setPayment] = useState("cod");
+  // Signed-in customers: their address book, the one picked ("new" = typing a new one), and whether to save it.
+  const [addresses, setAddresses] = useState([]);
+  const [picked, setPicked] = useState("new");
+  const [saveAddress, setSaveAddress] = useState(true);
   const [form, setForm] = useState(() => {
     const saved = loadSaved();
     const [first = "", ...rest] = (user?.name || "").split(" ");
@@ -73,6 +78,18 @@ export default function Checkout() {
       if (r.data.razorpay_enabled) setPayment("razorpay");
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!user) { setAddresses([]); setPicked("new"); return; }
+    api.get("/account/addresses").then(r => {
+      const list = Array.isArray(r.data) ? r.data : [];
+      setAddresses(list);
+      const def = list.find(a => a.is_default) || list[0];
+      if (def) pickAddress(def);
+    }).catch(() => {});
+    // pickAddress only sets state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Auth may resolve after the first render; fill in the account details if the fields are still empty.
   useEffect(() => {
@@ -93,6 +110,12 @@ export default function Checkout() {
   const usualShipping = shippingFor(totalPrice);
   const shipping = freeShipping ? 0 : usualShipping;
   const update = (field) => (e) => setForm(p => ({ ...p, [field]: e.target.value }));
+  function pickAddress(a) {
+    setPicked(a ? a.id : "new");
+    setForm(f => a
+      ? { ...f, first_name: a.first_name, last_name: a.last_name, phone: a.phone, address: a.address, city: a.city, state: a.state, zip: a.zip }
+      : { ...f, address: "", city: "", state: "", zip: "" });
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,6 +134,10 @@ export default function Checkout() {
       });
       try {
         if (remember) localStorage.setItem(SAVED_KEY, JSON.stringify(form));
+        if (user && picked === "new" && saveAddress) {
+          const { first_name, last_name, phone, address, city, state, zip } = form;
+          api.post("/account/addresses", { label: addresses.length ? "Other" : "Home", first_name, last_name, phone, address, city, state, zip }).catch(() => {});
+        }
         else localStorage.removeItem(SAVED_KEY);
       } catch { /* storage unavailable */ }
 
@@ -204,6 +231,25 @@ export default function Checkout() {
 
               <section>
                 <h2 className="font-heading text-xl text-stone-900 mb-6">Shipping address</h2>
+                {addresses.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6" role="radiogroup" aria-label="Saved addresses" data-testid="saved-addresses">
+                    {addresses.map(a => (
+                      <label key={a.id} className={`flex items-start gap-3 border-2 bg-white p-4 cursor-pointer font-body ${picked === a.id ? "border-burgundy" : "border-stone-200 hover:border-gold"}`}>
+                        <input type="radio" name="saved-address" checked={picked === a.id} onChange={() => pickAddress(a)} className="mt-1 accent-burgundy" />
+                        <span className="min-w-0">
+                          <span className="block text-xs font-semibold uppercase tracking-wider text-burgundy">{a.label || "Other"}{a.is_default ? " · Default" : ""}</span>
+                          <span className="block text-sm font-semibold text-stone-900">{a.first_name} {a.last_name}</span>
+                          <span className="block text-sm text-stone-600 truncate">{addressLine(a)}</span>
+                          <span className="block text-sm text-stone-600">{a.phone}</span>
+                        </span>
+                      </label>
+                    ))}
+                    <label className={`flex items-center gap-3 border-2 border-dashed bg-white p-4 cursor-pointer font-body text-sm ${picked === "new" ? "border-burgundy text-stone-900" : "border-stone-300 text-stone-600 hover:border-gold"}`}>
+                      <input type="radio" name="saved-address" checked={picked === "new"} onChange={() => pickAddress(null)} className="accent-burgundy" />
+                      Deliver to a new address
+                    </label>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <Field label="First name" id="co-first">
                     <Input id="co-first" data-testid="checkout-firstname" autoComplete="given-name" value={form.first_name} onChange={update("first_name")} required maxLength={60} />
@@ -221,7 +267,7 @@ export default function Checkout() {
                     <select id="co-state" data-testid="checkout-state" autoComplete="address-level1" value={form.state} onChange={update("state")} required
                       className="flex h-11 w-full border border-stone-300 bg-white px-3 text-sm font-body outline-none focus:border-gold">
                       <option value="">Select state</option>
-                      {STATES.map(st => <option key={st} value={st}>{st}</option>)}
+                      {INDIAN_STATES.map(st => <option key={st} value={st}>{st}</option>)}
                     </select>
                   </Field>
                   <Field label="PIN code" id="co-zip">
@@ -236,10 +282,19 @@ export default function Checkout() {
                       className="w-full border border-stone-300 bg-white px-3 py-2 text-sm font-body outline-none focus:border-gold resize-y" />
                   </Field>
                 </div>
-                <label className="mt-5 flex items-center gap-3 text-sm font-body text-stone-600 cursor-pointer">
-                  <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="w-4 h-4 accent-burgundy" />
-                  Save these details for next time (on this device)
-                </label>
+                {user ? (
+                  picked === "new" && (
+                    <label className="mt-5 flex items-center gap-3 text-sm font-body text-stone-600 cursor-pointer">
+                      <input type="checkbox" checked={saveAddress} onChange={e => setSaveAddress(e.target.checked)} className="w-4 h-4 accent-burgundy" data-testid="save-address" />
+                      Save this address to my account
+                    </label>
+                  )
+                ) : (
+                  <label className="mt-5 flex items-center gap-3 text-sm font-body text-stone-600 cursor-pointer">
+                    <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="w-4 h-4 accent-burgundy" />
+                    Save these details for next time (on this device)
+                  </label>
+                )}
               </section>
 
               <section>

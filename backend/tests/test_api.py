@@ -204,6 +204,23 @@ with TestClient(server.app) as anon:
     admin.put("/api/admin/settings", json=s0)
     check("customer can't use admin API", cust.get("/api/admin/orders").status_code == 403)
 
+    # Saved addresses
+    home = {"label": "Home", "first_name": "Asha", "last_name": "K", "phone": "98765 43210", "address": "1 MG Road", "city": "Pune", "state": "Maharashtra", "zip": "411001"}
+    r = cust.post("/api/account/addresses", json=home)
+    check("address saved, first is default", r.status_code == 201 and r.json()["is_default"] is True, r.text)
+    a1 = r.json()
+    check("duplicate address not saved twice", cust.post("/api/account/addresses", json=home).json()["id"] == a1["id"])
+    a2 = cust.post("/api/account/addresses", json={**home, "label": "Work", "address": "Tech Park", "is_default": True}).json()
+    lst = cust.get("/api/account/addresses").json()
+    check("new default replaces old", [a["is_default"] for a in lst] == [False, True], lst)
+    check("bad PIN rejected", cust.post("/api/account/addresses", json={**home, "address": "X", "zip": "12345"}).status_code == 422)
+    check("bad phone rejected", cust.post("/api/account/addresses", json={**home, "address": "Y", "phone": "12345"}).status_code == 422)
+    r = cust.put(f"/api/account/addresses/{a1['id']}", json={**home, "city": "Mumbai"})
+    check("address edited", r.status_code == 200 and r.json()["city"] == "Mumbai", r.text)
+    left = cust.delete(f"/api/account/addresses/{a2['id']}").json()
+    check("deleting default makes another default", len(left) == 1 and left[0]["is_default"] is True, left)
+    check("addresses need sign-in", anon.get("/api/account/addresses").status_code == 401)
+
     # Google sign-in
     check("google provider advertised", anon.get("/api/auth/providers").json()["google_client_id"] == "test-client.apps.googleusercontent.com")
     g = TestClient(server.app)
