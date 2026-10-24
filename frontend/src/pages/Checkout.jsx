@@ -13,6 +13,7 @@ import { api, apiError, imageUrl } from "../lib/api";
 import { formatPrice } from "../lib/format";
 import { usePageTitle } from "../lib/hooks";
 import CouponBox from "../components/CouponBox";
+import GoogleSignIn from "../components/GoogleSignIn";
 
 const SAVED_KEY = "aurevia_checkout_address";
 const EMPTY = { first_name: "", last_name: "", email: "", phone: "", address: "", city: "", state: "", zip: "", country: "India" };
@@ -178,9 +179,11 @@ export default function Checkout() {
           className="font-heading text-3xl sm:text-4xl text-stone-900 tracking-tight mb-10">Checkout</motion.h1>
 
         {!user && (
-          <p className="text-sm font-body text-stone-600 bg-white border border-stone-200 px-4 py-3 mb-8">
-            Have an account? <Link to="/login" state={{ from: "/checkout" }} className="text-gold font-semibold hover:text-gold-hover">Sign in</Link> to track this order in your account — or continue as a guest.
-          </p>
+          <div className="text-sm font-body text-stone-600 bg-white border border-stone-200 px-4 py-3 mb-8 flex flex-col sm:flex-row sm:items-center gap-3">
+            <p className="flex-1">Have an account? <Link to="/login" state={{ from: "/checkout" }} className="text-gold font-semibold hover:text-gold-hover">Sign in</Link> to track this order in your account and fill in your details — or continue as a guest.</p>
+            {/* Signing in here keeps the cart and fills the form from the account. */}
+            <div className="sm:w-64 shrink-0"><GoogleSignIn text="signin_with" divider={null} onError={(m) => toast.error(m)} /></div>
+          </div>
         )}
 
         <form onSubmit={handleSubmit}>

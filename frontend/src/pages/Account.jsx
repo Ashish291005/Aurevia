@@ -145,6 +145,9 @@ function ProfileTab() {
 }
 
 function SecurityTab() {
+  const { user, updateUser } = useAuth();
+  // Accounts created with Google have no password yet; they can add one to also sign in with email.
+  const hasPassword = user?.has_password !== false;
   const [form, setForm] = useState({ current: "", next: "", confirm: "" });
   const [saving, setSaving] = useState(false);
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
@@ -155,8 +158,9 @@ function SecurityTab() {
     setSaving(true);
     try {
       await api.post("/auth/change-password", { current_password: form.current, new_password: form.next });
-      toast.success("Password updated");
+      toast.success(hasPassword ? "Password updated" : "Password set. You can now also sign in with your email.");
       setForm({ current: "", next: "", confirm: "" });
+      if (!hasPassword) updateUser(u => ({ ...u, has_password: true }));
     } catch (err) {
       toast.error(apiError(err, "Could not update password"));
     } finally {
@@ -165,10 +169,14 @@ function SecurityTab() {
   };
   return (
     <form onSubmit={save} className="bg-white border border-stone-200 p-6 sm:p-8 max-w-lg space-y-5">
-      <div>
-        <Label htmlFor="pw-current">Current password</Label>
-        <Input id="pw-current" type="password" autoComplete="current-password" value={form.current} onChange={set("current")} required />
-      </div>
+      {hasPassword ? (
+        <div>
+          <Label htmlFor="pw-current">Current password</Label>
+          <Input id="pw-current" type="password" autoComplete="current-password" value={form.current} onChange={set("current")} required />
+        </div>
+      ) : (
+        <p className="text-sm font-body text-stone-600">You sign in with Google. Optionally set a password to also sign in with your email ({user?.email}).</p>
+      )}
       <div>
         <Label htmlFor="pw-new">New password</Label>
         <Input id="pw-new" type="password" autoComplete="new-password" value={form.next} onChange={set("next")} required minLength={6} placeholder="At least 6 characters" />
@@ -179,7 +187,7 @@ function SecurityTab() {
       </div>
       <button type="submit" disabled={saving}
         className="flex items-center gap-2 bg-burgundy text-white px-8 py-3 text-xs tracking-[0.2em] uppercase font-body font-semibold hover:bg-burgundy-dark disabled:opacity-50">
-        {saving && <Loader2 className="w-4 h-4 animate-spin" />} Update password
+        {saving && <Loader2 className="w-4 h-4 animate-spin" />} {hasPassword ? "Update password" : "Set password"}
       </button>
     </form>
   );

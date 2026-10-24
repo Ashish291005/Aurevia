@@ -12,6 +12,7 @@ import hmac
 import json
 import os
 import sys
+import time
 import uuid
 from pathlib import Path
 
@@ -22,7 +23,7 @@ os.environ.update(JWT_SECRET=os.environ.get("JWT_SECRET", "test-secret"), RAZORP
                   RAZORPAY_KEY_SECRET="fake_secret", RAZORPAY_WEBHOOK_SECRET="whsec_fake",
                   ADMIN_EMAIL=os.environ.get("TEST_ADMIN_EMAIL", "admin@aurevia.com"),
                   ADMIN_PASSWORD=os.environ.get("TEST_ADMIN_PASSWORD", "Admin@123"),
-                  SUPABASE_URL="", SUPABASE_SERVICE_ROLE_KEY="")
+                  SUPABASE_URL="", SUPABASE_SERVICE_ROLE_KEY="", GOOGLE_CLIENT_ID="test-client.apps.googleusercontent.com")
 sys.path.insert(0, str(BACKEND))
 os.chdir(BACKEND)
 
@@ -43,6 +44,16 @@ async def fake_rzp_order(total, receipt):
     return {"id": f"order_T{uuid.uuid4().hex[:8]}"}
 
 server.razorpay_create_order = fake_rzp_order
+
+
+async def fake_google(credential):
+    # "good:<email>" -> valid claims; "aud:..." -> wrong audience; "unverified:..." -> unverified email
+    kind, email = credential.split(":", 1)
+    return {"aud": "someone-else" if kind == "aud" else "test-client.apps.googleusercontent.com", "iss": "https://accounts.google.com",
+            "exp": str(int(time.time()) + 600), "email": email, "email_verified": "false" if kind == "unverified" else "true",
+            "sub": f"g-{email}", "name": "Google Person", "picture": "https://example.test/p.png"}
+
+server.verify_google_credential = fake_google
 sign = lambda msg, secret: hmac.new(secret.encode(), msg.encode(), hashlib.sha256).hexdigest()  # noqa: E731
 
 with TestClient(server.app) as anon:
@@ -192,6 +203,22 @@ with TestClient(server.app) as anon:
     check("settings update (upsert)", r.json()["announcement_text"] == f"Test {RUN}", r.text)
     admin.put("/api/admin/settings", json=s0)
     check("customer can't use admin API", cust.get("/api/admin/orders").status_code == 403)
+
+    # Google sign-in
+    check("google provider advertised", anon.get("/api/auth/providers").json()["google_client_id"] == "test-client.apps.googleusercontent.com")
+    g = TestClient(server.app)
+    gmail = f"g-{RUN}@gmail.test"
+    r = g.post("/api/auth/google", json={"credential": f"good:{gmail}" + "x" * 20})
+    check("google sign-in creates account", r.status_code == 200 and r.json()["google"] is True and r.json()["has_password"] is False, r.text)
+    check("google session remembered", g.get("/api/auth/session").json()["user"]["email"] == gmail + "x" * 20)
+    check("password login refused for google-only account", anon.post("/api/auth/login", json={"email": gmail + "x" * 20, "password": "whatever1"}).status_code == 401)
+    check("google account can add a password", g.post("/api/auth/change-password", json={"current_password": "", "new_password": "NewPass123"}).status_code == 200)
+    linked = TestClient(server.app).post("/api/auth/google", json={"credential": f"good:{email}" + "" })
+    check("google links to existing email account", linked.status_code == 200 and linked.json()["id"] == cust.get("/api/auth/me").json()["id"], linked.text)
+    check("google wrong audience rejected", anon.post("/api/auth/google", json={"credential": f"aud:{gmail}" + "x" * 20}).status_code == 401)
+    check("google unverified email rejected", anon.post("/api/auth/google", json={"credential": f"unverified:{gmail}" + "x" * 20}).status_code == 401)
+    rc = [c for c in g.cookies.jar if c.name == "refresh_token"]
+    check("remembered for 30 days", rc and rc[0].expires and rc[0].expires - time.time() > 29 * 86400)
 
     # Clean up rows this run created (orders/reviews are kept as history in a real DB; delete test product data)
     admin.delete(f"/api/admin/coupons/{coupon['id']}")

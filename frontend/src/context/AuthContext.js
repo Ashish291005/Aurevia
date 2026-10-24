@@ -41,6 +41,17 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // `credential` is the ID token from Google's "Sign in with Google" button; the backend verifies it.
+  const loginWithGoogle = async (credential) => {
+    try {
+      const { data } = await api.post("/auth/google", { credential });
+      setUser(data);
+      return { success: true, user: data };
+    } catch (e) {
+      return { success: false, error: apiError(e, "Google sign-in failed. Please try again.") };
+    }
+  };
+
   const logout = async () => {
     try {
       await api.post("/auth/logout");
@@ -49,7 +60,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser: setUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout, updateUser: setUser }}>
       {children}
     </AuthContext.Provider>
   );

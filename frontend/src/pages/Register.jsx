@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import { usePageTitle } from "../lib/hooks";
 import { Input } from "../components/ui/input";
+import GoogleSignIn from "../components/GoogleSignIn";
 
 export default function Register() {
   const { register, user } = useAuth();
@@ -47,6 +48,8 @@ export default function Register() {
             {error}
           </div>
         )}
+
+        <GoogleSignIn text="signup_with" onSuccess={() => navigate(destination, { replace: true })} onError={setError} divider="or create one with email" />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

@@ -108,8 +108,9 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+def verify_password(plain_password: str, hashed_password: Optional[str]) -> bool:
+    # Accounts created with Google have no password until the customer sets one.
+    return bool(hashed_password) and bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 def get_jwt_secret() -> str:
@@ -125,20 +126,25 @@ def create_access_token(user_id: str, email: str) -> str:
     return jwt.encode(payload, get_jwt_secret(), algorithm=JWT_ALGORITHM)
 
 
+# How long a device stays signed in without being used.
+REMEMBER_DAYS = 30
+
+
 def create_refresh_token(user_id: str) -> str:
-    payload = {"sub": user_id, "exp": now_utc() + timedelta(days=7), "type": "refresh"}
+    payload = {"sub": user_id, "exp": now_utc() + timedelta(days=REMEMBER_DAYS), "type": "refresh"}
     return jwt.encode(payload, get_jwt_secret(), algorithm=JWT_ALGORITHM)
 
 
 def set_auth_cookies(response: Response, user_id: str, email: str):
     response.set_cookie(key="access_token", value=create_access_token(user_id, email), httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=900, path="/")
-    response.set_cookie(key="refresh_token", value=create_refresh_token(user_id), httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=604800, path="/")
+    response.set_cookie(key="refresh_token", value=create_refresh_token(user_id), httponly=True, secure=COOKIE_SECURE, samesite="lax", max_age=REMEMBER_DAYS * 86400, path="/")
 
 
 def public_user(user: dict) -> dict:
     return {
         "id": str(user["_id"]), "email": user["email"], "name": user.get("name", ""),
         "role": user.get("role", "user"), "created_at": user.get("created_at"),
+        "has_password": bool(user.get("password_hash")), "google": bool(user.get("google_sub")), "picture": user.get("picture", ""),
     }
 
 
@@ -270,6 +276,59 @@ async def login(input_data: LoginInput, request: Request, response: Response):
     return public_user(user)
 
 
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+
+
+@api_router.get("/auth/providers")
+async def auth_providers():
+    """Which sign-in buttons the storefront should show (the client ID is public by design)."""
+    return {"google_client_id": GOOGLE_CLIENT_ID or None}
+
+
+class GoogleSignInInput(BaseModel):
+    credential: str = Field(min_length=20, max_length=5000)
+
+
+async def verify_google_credential(credential: str) -> dict:
+    """Checks a "Sign in with Google" ID token with Google and returns its claims."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as http:
+            r = await http.post("https://oauth2.googleapis.com/tokeninfo", data={"id_token": credential})
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Couldn't reach Google. Please try again.")
+    if r.status_code != 200:
+        raise HTTPException(status_code=401, detail="Google sign-in failed. Please try again.")
+    return r.json()
+
+
+@api_router.post("/auth/google")
+async def google_sign_in(input_data: GoogleSignInInput, response: Response):
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=503, detail="Google sign-in isn't set up yet.")
+    claims = await verify_google_credential(input_data.credential)
+    if (claims.get("aud") != GOOGLE_CLIENT_ID or claims.get("iss") not in ("accounts.google.com", "https://accounts.google.com")
+            or int(claims.get("exp", 0)) < now_utc().timestamp()):
+        raise HTTPException(status_code=401, detail="Google sign-in failed. Please try again.")
+    email = (claims.get("email") or "").strip().lower()
+    if not email or str(claims.get("email_verified")).lower() != "true":
+        raise HTTPException(status_code=401, detail="Your Google account's email isn't verified.")
+    sub = str(claims["sub"])
+    user = await db.users.find_one({"google_sub": sub}) or await db.users.find_one({"email": email})
+    if user:
+        # Same verified email: link Google to the existing account so its orders stay together.
+        changes = {"google_sub": sub, "picture": claims.get("picture", "")}
+        if not user.get("name"):
+            changes["name"] = claims.get("name", "")
+        await db.users.update_one({"_id": user["_id"]}, {"$set": changes})
+        user.update(changes)
+    else:
+        user = {"email": email, "password_hash": None, "name": claims.get("name") or email.split("@")[0], "role": "user",
+                "google_sub": sub, "picture": claims.get("picture", ""), "created_at": now_iso()}
+        user["_id"] = (await db.users.insert_one(user)).inserted_id
+    set_auth_cookies(response, str(user["_id"]), user["email"])
+    return public_user(user)
+
+
 @api_router.post("/auth/logout")
 async def logout(response: Response):
     response.delete_cookie("access_token", path="/")
@@ -310,7 +369,8 @@ async def update_me(input_data: ProfileInput, request: Request):
 @api_router.post("/auth/change-password")
 async def change_password(input_data: ChangePasswordInput, request: Request):
     user = await get_current_user(request)
-    if not verify_password(input_data.current_password, user["password_hash"]):
+    # Google-only accounts may add a password without a current one.
+    if user.get("password_hash") and not verify_password(input_data.current_password, user["password_hash"]):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     await db.users.update_one({"_id": user["_id"]}, {"$set": {"password_hash": hash_password(input_data.new_password)}})
     return {"message": "Password updated"}
@@ -1522,7 +1582,7 @@ async def health():
     return {
         "database": DB_BACKEND,
         "image_storage": "supabase" if USE_SUPABASE_STORAGE else "local-disk",
-        "jwt_secret_set": bool(os.environ.get("JWT_SECRET", "").strip()),
+        "jwt_secret_set": bool(os.environ.get("JWT_SECRET", "").strip()), "google_sign_in": bool(GOOGLE_CLIENT_ID),
         "admin_password_set": bool(os.environ.get("ADMIN_PASSWORD")),
         "razorpay_enabled": razorpay_enabled(),
         "cookie_secure": COOKIE_SECURE,
