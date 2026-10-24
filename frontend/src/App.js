@@ -16,6 +16,7 @@ import Home from "./pages/Home";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import About from "./pages/About";
+import Policy from "./pages/Policy";
 import Contact from "./pages/Contact";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
@@ -40,6 +41,9 @@ function Layout() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />
+          {["privacy-policy", "terms", "refund-policy", "shipping-policy"].map(slug => (
+            <Route key={slug} path={`/${slug}`} element={<Policy />} />
+          ))}
           <Route path="/contact" element={<Contact />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />

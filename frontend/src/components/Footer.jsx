@@ -6,6 +6,7 @@ import { Instagram, Facebook, Twitter } from "./ui/social-icons";
 import { api, apiError } from "../lib/api";
 import { useSettings } from "../context/SettingsContext";
 import { useProducts } from "../context/ProductsContext";
+import { POLICY_LINKS } from "../pages/Policy";
 
 // Admin panel: its own Vite app on :3001 locally, served at /admin on the live site (see vercel.json).
 const ADMIN_URL = process.env.REACT_APP_ADMIN_URL || (process.env.NODE_ENV === "development" ? "http://localhost:3001" : "/admin/");
@@ -86,6 +87,7 @@ export default function Footer() {
                 { to: "/wishlist", label: "Wishlist" },
                 { to: "/about", label: "Our Story" },
                 { to: "/contact", label: "Contact Us" },
+                ...POLICY_LINKS,
               ].map(link => (
                 <Link key={link.to} to={link.to} className="text-white/60 hover:text-gold transition-colors">{link.label}</Link>
               ))}
