@@ -47,7 +47,7 @@ function Field({ label, id, optional, className = "", children }) {
 }
 
 export default function Checkout() {
-  const { purchasable, totalPrice, clearCart, loading, coupon, discount } = useCart();
+  const { purchasable, totalPrice, clearCart, loading, coupon, discount, freeShipping } = useCart();
   const { user } = useAuth();
   const { refresh } = useProducts();
   const { shippingFor } = useSettings();
@@ -89,7 +89,8 @@ export default function Checkout() {
   if (loading) return <div className="pt-40 pb-24 text-center font-body text-stone-500">Loading...</div>;
   if (purchasable.length === 0) return <Navigate to="/cart" replace />;
 
-  const shipping = shippingFor(totalPrice);
+  const usualShipping = shippingFor(totalPrice);
+  const shipping = freeShipping ? 0 : usualShipping;
   const update = (field) => (e) => setForm(p => ({ ...p, [field]: e.target.value }));
 
   const handleSubmit = async (e) => {
@@ -285,7 +286,7 @@ export default function Checkout() {
               <div className="space-y-2 text-sm font-body">
                 <div className="flex justify-between"><span className="text-stone-500">Subtotal</span><span>{formatPrice(totalPrice)}</span></div>
                 {discount > 0 && <div className="flex justify-between text-emerald-700"><span>Coupon ({coupon.code})</span><span data-testid="checkout-discount">−{formatPrice(discount)}</span></div>}
-                <div className="flex justify-between"><span className="text-stone-500">Shipping</span><span className={shipping === 0 ? "text-gold" : ""}>{shipping === 0 ? "Complimentary" : formatPrice(shipping)}</span></div>
+                <div className="flex justify-between"><span className="text-stone-500">Shipping</span><span className={shipping === 0 ? "text-gold" : ""} data-testid="checkout-shipping">{freeShipping && usualShipping > 0 ? <><s className="text-stone-400 mr-1.5">{formatPrice(usualShipping)}</s>Free ({coupon.code})</> : shipping === 0 ? "Complimentary" : formatPrice(shipping)}</span></div>
               </div>
               <Separator className="my-4" />
               <div className="flex justify-between mb-8">

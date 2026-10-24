@@ -145,6 +145,13 @@ with TestClient(server.app) as anon:
     check("per-customer: first use ok", r.status_code == 201, r.text)
     check("per-customer: same email blocked", val("C", em=email.upper()).status_code == 400)
     check("per-customer: other email ok", val("C", em=f"new-{CR}@example.test").status_code == 200)
+    fs = admin.post("/api/admin/coupons", json={"code": f"FS{CR}", "discount_type": "free_shipping", "per_customer_limit": 0}).json()
+    made.append(fs)
+    check("free delivery coupon validates", val("FS").status_code == 200 and val("FS").json()["discount_type"] == "free_shipping" and val("FS").json()["discount"] == 0, val("FS").text)
+    r = cust.post("/api/orders", json={"customer": customer, "items": [item(1)], "coupon_code": f"FS{CR}"})
+    check("free delivery coupon waives shipping", r.status_code == 201 and r.json()["shipping"] == 0 and r.json()["discount"] == 0
+          and r.json()["total"] == r.json()["subtotal"] and r.json()["coupon"].get("free_shipping") is True, r.text)
+    check("percent coupon needs an amount", admin.post("/api/admin/coupons", json={"code": f"Z{CR}", "discount_type": "percent", "discount_value": 0}).status_code == 422)
     check("first order only", val("F", em=email).status_code == 400 and val("F", em=f"new-{CR}@example.test").status_code == 200)
     check("scheduled coupon not active yet", val("S").status_code == 400 and "yet" in val("S").json()["detail"])
     avail = {c["code"] for c in anon.get("/api/coupons/available").json()}
@@ -160,7 +167,7 @@ with TestClient(server.app) as anon:
     sf_offer = next(o for o in anon.get("/api/storefront").json()["offers"] if o["title"] == f"B{CR}")
     check("deleting coupon leaves banner as announcement", sf_offer["code"] == "" and "coupon" not in sf_offer, sf_offer)
     admin.delete(f"/api/admin/offers/{banner['id']}")
-    for c in made[:5]:
+    for c in made[:5] + made[6:]:
         admin.delete(f"/api/admin/coupons/{c['id']}")
 
     # Reviews

@@ -27,7 +27,7 @@ export default function CouponBox() {
       if (data.error) { setError(data.error); return; }
       applyCoupon(data);
       setCode("");
-      toast.success(`${data.code} applied — you save ${formatPrice(data.discount)}`);
+      toast.success(data.discount_type === "free_shipping" ? `${data.code} applied — free delivery` : `${data.code} applied — you save ${formatPrice(data.discount)}`);
     } catch (err) {
       setError(apiError(err, "That code didn't work"));
     } finally {
@@ -44,7 +44,7 @@ export default function CouponBox() {
             <div className="min-w-0 font-body">
               <p className="text-sm font-semibold text-stone-900">{coupon.code}</p>
               <p className="text-xs text-stone-600 truncate">
-                {!coupon.offer ? "This code is no longer available" : coupon.error ? coupon.error : `You save ${formatPrice(coupon.discount)}`}
+                {!coupon.offer ? "This code is no longer available" : coupon.error ? coupon.error : coupon.offer.discount_type === "free_shipping" ? "Free delivery on this order" : `You save ${formatPrice(coupon.discount)}`}
               </p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function CouponBox() {
               <div className="flex items-center justify-between gap-3">
                 <span className="min-w-0">
                   <span className="block text-xs font-body font-bold tracking-wider text-burgundy">{o.code}</span>
-                  <span className="block text-[11px] font-body text-stone-600 truncate">{o.description || (o.discount_type === "percent" ? `${o.discount_value}% off` : `${formatPrice(o.discount_value)} off`)}{o.min_order ? ` · min ${formatPrice(o.min_order)}` : ""}</span>
+                  <span className="block text-[11px] font-body text-stone-600 truncate">{o.description || (o.discount_type === "free_shipping" ? "Free delivery" : o.discount_type === "percent" ? `${o.discount_value}% off` : `${formatPrice(o.discount_value)} off`)}{o.min_order ? ` · min ${formatPrice(o.min_order)}` : ""}</span>
                 </span>
                 <button type="button" onClick={() => apply(o.code)} disabled={busy}
                   className="text-[11px] uppercase tracking-wider font-body font-semibold text-stone-700 hover:text-burgundy disabled:opacity-50">Apply</button>

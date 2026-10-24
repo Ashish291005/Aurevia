@@ -924,8 +924,8 @@ def _utc_iso(v: Optional[str], label: str) -> Optional[str]:
 class CouponDocInput(BaseModel):
     code: str = Field(min_length=3, max_length=30)
     description: str = Field(default="", max_length=120)
-    discount_type: Literal["percent", "flat"] = "percent"
-    discount_value: float = Field(gt=0)
+    discount_type: Literal["percent", "flat", "free_shipping"] = "percent"
+    discount_value: float = Field(default=0, ge=0)        # unused for free_shipping
     max_discount: float = Field(default=0, ge=0)          # percent only; 0 = no cap
     min_order: float = Field(default=0, ge=0)
     starts_at: Optional[str] = Field(default=None, max_length=40)
@@ -1001,6 +1001,8 @@ def coupon_discount(c: dict, subtotal: float) -> float:
     if subtotal < c.get("min_order", 0):
         short = c["min_order"] - subtotal
         raise HTTPException(status_code=400, detail=f"Add ₹{short:,.0f} more to use {c['code']} (minimum order ₹{c['min_order']:,.0f}).")
+    if c["discount_type"] == "free_shipping":
+        return 0.0  # the saving is the delivery charge, waived when the order is priced
     if c["discount_type"] == "percent":
         d = round(subtotal * c["discount_value"] / 100, 2)
         return min(d, c["max_discount"]) if c.get("max_discount") else d
@@ -1037,7 +1039,11 @@ async def available_coupons():
 async def prepare_coupon(data: CouponDocInput, current: Optional[dict] = None) -> dict:
     doc = data.model_dump()
     doc["description"], doc["terms"] = doc["description"].strip(), doc["terms"].strip()
-    if doc["discount_type"] == "percent":
+    if doc["discount_type"] == "free_shipping":
+        doc.update({"discount_value": 0, "max_discount": 0})
+    elif doc["discount_value"] <= 0:
+        raise HTTPException(status_code=422, detail="Enter how much the coupon takes off.")
+    elif doc["discount_type"] == "percent":
         if doc["discount_value"] > 90:
             raise HTTPException(status_code=422, detail="Percentage discounts can be at most 90%.")
     else:
@@ -1189,6 +1195,9 @@ async def place_order(input_data: OrderInput, request: Request):
             c = await find_coupon(input_data.coupon_code, input_data.customer.email)
             discount = coupon_discount(c, subtotal)
             coupon = {"code": c["code"], "title": c.get("description") or c["code"]}
+            if c["discount_type"] == "free_shipping":
+                coupon["free_shipping"] = True
+                shipping = 0.0
         except HTTPException:
             await restock(reserved)
             raise

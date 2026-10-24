@@ -84,7 +84,7 @@ export default function Coupons() {
       />
 
       <PlacementGuide items={[
-        { img: "guide-coupon-cart.jpg", title: "Cart & checkout", text: "Codes with \"Suggest at checkout\" on are listed under the coupon box, each with a T&C link." },
+        { img: "guide-coupon-cart.jpg", title: "Cart & checkout", text: "Codes with \"Suggest at checkout\" on are listed under the coupon box, each with a T&C link. Free-delivery codes show the delivery charge crossed out." },
         { img: "guide-banner.jpg", title: "Offer banners & popup", text: "Pick a coupon on an offer (Offers & banners page) to show its code with a copy button." },
       ]} />
 
@@ -146,9 +146,13 @@ export default function Coupons() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label className="block"><Label>Type</Label>
                 <Select value={form.discount_type} onChange={set("discount_type")} className="w-full"
-                  options={[{ value: "percent", label: "Percentage (%)" }, { value: "flat", label: "Flat amount (₹)" }]} /></label>
-              <label className="block"><Label>{form.discount_type === "percent" ? "Percent off" : "Amount off (₹)"}</Label>
-                <Input type="number" min="1" max={form.discount_type === "percent" ? 90 : undefined} step="1" value={form.discount_value} onChange={set("discount_value")} required className="rounded-md" data-testid="coupon-value" /></label>
+                  options={[{ value: "percent", label: "Percentage (%)" }, { value: "flat", label: "Flat amount (₹)" }, { value: "free_shipping", label: "Free delivery" }]} /></label>
+              {form.discount_type === "free_shipping" ? (
+                <p className="sm:col-span-2 self-end text-xs text-stone-500 bg-stone-50 rounded px-3 py-2.5">The delivery charge becomes <strong>₹0</strong> on orders using this code. Product prices stay the same.</p>
+              ) : (
+                <label className="block"><Label>{form.discount_type === "percent" ? "Percent off" : "Amount off (₹)"}</Label>
+                  <Input type="number" min="1" max={form.discount_type === "percent" ? 90 : undefined} step="1" value={form.discount_value} onChange={set("discount_value")} required className="rounded-md" data-testid="coupon-value" /></label>
+              )}
               {form.discount_type === "percent" && (
                 <label className="block"><Label hint="0 = no cap">Max discount (₹)</Label>
                   <Input type="number" min="0" step="1" value={form.max_discount} onChange={set("max_discount")} className="rounded-md" data-testid="coupon-max" /></label>

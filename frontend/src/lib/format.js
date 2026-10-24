@@ -12,6 +12,7 @@ export function couponDiscount(offer, subtotal) {
   if (subtotal < (offer.min_order || 0)) {
     return { discount: 0, error: `Add ${formatPrice(offer.min_order - subtotal)} more to use ${offer.code}` };
   }
+  if (offer.discount_type === "free_shipping") return { discount: 0, error: "" };  // delivery is waived instead
   let discount = offer.discount_type === "percent"
     ? Math.round(subtotal * offer.discount_value) / 100
     : Math.min(offer.discount_value, subtotal);
@@ -24,6 +25,7 @@ export function couponTerms(c) {
   if (!c) return [];
   const per = c.per_customer_limit;
   return [
+    c.discount_type === "free_shipping" ? "Free delivery on this order (the delivery charge is waived)." : "",
     c.min_order ? `Minimum order value ${formatPrice(c.min_order)}.` : "",
     c.discount_type === "percent" && c.max_discount ? `Maximum discount ${formatPrice(c.max_discount)}.` : "",
     c.first_order_only ? "Valid on your first order only." : "",

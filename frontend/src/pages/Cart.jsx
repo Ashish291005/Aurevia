@@ -26,7 +26,7 @@ export function FreeShippingProgress({ subtotal }) {
 }
 
 export default function Cart() {
-  const { lines, removeItem, updateQuantity, totalPrice, totalItems, purchasable, loading, discount } = useCart();
+  const { lines, removeItem, updateQuantity, totalPrice, totalItems, purchasable, loading, discount, freeShipping } = useCart();
   const { shippingFor } = useSettings();
   const navigate = useNavigate();
   usePageTitle("Cart");
@@ -51,7 +51,8 @@ export default function Cart() {
     );
   }
 
-  const shipping = shippingFor(totalPrice);
+  const usualShipping = shippingFor(totalPrice);
+  const shipping = freeShipping ? 0 : usualShipping;
   const hasProblems = lines.some(l => !l.available || l.quantity > l.max);
 
   return (
@@ -121,7 +122,7 @@ export default function Cart() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
             className="lg:sticky lg:top-28 lg:self-start bg-white p-6 sm:p-8 border border-stone-200">
             <h2 className="font-heading text-xl text-stone-900 mb-6">Order Summary</h2>
-            <FreeShippingProgress subtotal={totalPrice} />
+            {!freeShipping && <FreeShippingProgress subtotal={totalPrice} />}
             <CouponBox />
             <div className="space-y-3 mb-6 text-sm font-body">
               <div className="flex justify-between">
@@ -136,7 +137,9 @@ export default function Cart() {
               )}
               <div className="flex justify-between">
                 <span className="text-stone-500">Shipping</span>
-                <span data-testid="cart-shipping" className={shipping === 0 ? "text-gold" : "text-stone-900"}>{shipping === 0 ? "Complimentary" : formatPrice(shipping)}</span>
+                <span data-testid="cart-shipping" className={shipping === 0 ? "text-gold" : "text-stone-900"}>
+                  {freeShipping && usualShipping > 0 ? <><s className="text-stone-400 mr-1.5">{formatPrice(usualShipping)}</s>Free</> : shipping === 0 ? "Complimentary" : formatPrice(shipping)}
+                </span>
               </div>
             </div>
             <Separator className="mb-6" />

@@ -84,6 +84,8 @@ export function CartProvider({ children }) {
   const couponOffer = applied?.rules || null;
   const { discount, error: couponError } = couponDiscount(couponOffer, totalPrice);
   const coupon = applied ? { code: applied.code, offer: couponOffer, discount, error: couponOffer ? couponError : "" } : null;
+  // A "free delivery" coupon that currently applies (minimum order met).
+  const freeShipping = Boolean(coupon && couponOffer && !coupon.error && couponOffer.discount_type === "free_shipping");
 
   const addItem = useCallback((product, size, material, quantity = 1) => {
     const key = `${product.id}-${size}-${material}`;
@@ -110,7 +112,7 @@ export function CartProvider({ children }) {
   const clearCart = useCallback(() => { setItems([]); setApplied(null); }, [setItems]);
 
   return (
-    <CartContext.Provider value={{ items, lines, purchasable, loading, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, coupon, discount: coupon && !coupon.error ? discount : 0, setCouponCode, applyCoupon }}>
+    <CartContext.Provider value={{ items, lines, purchasable, loading, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, coupon, discount: coupon && !coupon.error ? discount : 0, freeShipping, setCouponCode, applyCoupon }}>
       {children}
     </CartContext.Provider>
   );

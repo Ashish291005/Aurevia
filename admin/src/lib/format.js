@@ -22,10 +22,11 @@ const shortDate = (iso) => new Date(iso).toLocaleString("en-IN", { day: "numeric
 // (kept in step with couponTerms in the storefront's lib/format.js).
 export function couponSummary(c, { asTerms = false } = {}) {
   if (!c) return asTerms ? [] : "";
-  const amount = c.discount_type === "percent" ? `${c.discount_value}% off` : `${money(c.discount_value)} off`;
+  const amount = c.discount_type === "free_shipping" ? "Free delivery" : c.discount_type === "percent" ? `${c.discount_value}% off` : `${money(c.discount_value)} off`;
   const per = c.per_customer_limit;
   if (asTerms) {
     return [
+      c.discount_type === "free_shipping" ? "Free delivery on this order (the delivery charge is waived)." : "",
       c.min_order ? `Minimum order value ${money(c.min_order)}.` : "",
       c.discount_type === "percent" && c.max_discount ? `Maximum discount ${money(c.max_discount)}.` : "",
       c.first_order_only ? "Valid on your first order only." : "",
