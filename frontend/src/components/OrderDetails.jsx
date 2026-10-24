@@ -43,7 +43,13 @@ export default function OrderDetails({ order }) {
     <div className="space-y-6">
       <OrderTimeline order={order} />
       {order.tracking_number && (
-        <p className="text-sm font-body text-stone-600">Tracking number: <strong className="text-stone-900">{order.tracking_number}</strong></p>
+        <p className="text-sm font-body text-stone-600 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span>{order.courier ? `${order.courier} · ` : ""}Tracking number: <strong className="text-stone-900">{order.tracking_number}</strong></span>
+          {order.tracking_url && (
+            <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" data-testid="track-shipment-link"
+              className="text-xs tracking-[0.15em] uppercase font-semibold text-burgundy hover:text-gold underline underline-offset-4">Track shipment →</a>
+          )}
+        </p>
       )}
       <ul className="divide-y divide-stone-100 border-y border-stone-200">
         {order.items.map((it, i) => (

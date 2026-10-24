@@ -65,6 +65,74 @@ function PasswordCard() {
   );
 }
 
+const STATES = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"];
+
+// Nimbus shipping: where couriers pick up from, and the default parcel size. Admin-only (not public settings).
+function ShippingCard() {
+  const [form, setForm] = useState(null);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { api.get("/admin/shipping").then(r => setForm(r.data)).catch(err => toast.error(apiError(err, "Could not load shipping settings"))); }, []);
+  if (!form) return null;
+  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+  const save = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const { nimbus_connected, ...rest } = form;
+      const num = (v) => Math.max(1, Math.round(Number(v) || 1));
+      const { data } = await api.put("/admin/shipping", { ...rest, package_weight: num(rest.package_weight), package_length: num(rest.package_length),
+        package_breadth: num(rest.package_breadth), package_height: num(rest.package_height) });
+      setForm(data);
+      toast.success("Shipping settings saved");
+    } catch (err) {
+      toast.error(apiError(err, "Could not save shipping settings"));
+    } finally {
+      setSaving(false);
+    }
+  };
+  const text = (k, label, props = {}) => (
+    <Field label={label} hint={props.hint}><Input value={form[k] || ""} onChange={set(k)} className="rounded-md" {...props} hint={undefined} /></Field>
+  );
+  return (
+    <form onSubmit={save} data-testid="shipping-settings">
+      <Section icon={Truck} title="Shipping · Nimbus" description="Your pickup (warehouse) address and default parcel size, used when you click Ship with Nimbus on an order.">
+        <p className={`text-xs rounded px-3 py-2 mb-4 ${form.nimbus_connected ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>
+          {form.nimbus_connected ? "Nimbus account connected." : "Nimbus account not connected yet: add NIMBUS_EMAIL and NIMBUS_PASSWORD in Vercel → Environment Variables, then redeploy."}
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {text("warehouse_name", "Warehouse name", { maxLength: 20, required: true, placeholder: "Aurevia Studio", hint: "Short name, max 20 characters (shown in Nimbus)" })}
+          {text("pickup_name", "Contact person", { maxLength: 200, required: true })}
+          {text("pickup_phone", "Pickup phone", { maxLength: 16, required: true, placeholder: "98765 43210" })}
+          {text("pickup_address", "Address", { maxLength: 200, required: true })}
+          {text("pickup_address_2", "Address line 2 (landmark)", { maxLength: 200 })}
+          {text("pickup_city", "City", { maxLength: 40, required: true })}
+          <Field label="State">
+            <select value={form.pickup_state || ""} onChange={set("pickup_state")} required className="h-10 w-full border border-stone-300 rounded-md bg-white px-3 text-sm outline-none focus:border-gold">
+              <option value="">Select state</option>
+              {STATES.map(st => <option key={st} value={st}>{st}</option>)}
+            </select>
+          </Field>
+          {text("pickup_pincode", "PIN code", { maxLength: 6, required: true, pattern: "[1-9][0-9]{5}", inputMode: "numeric" })}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+          {text("package_weight", "Default weight (g)", { type: "number", min: 1 })}
+          {text("package_length", "Length (cm)", { type: "number", min: 1 })}
+          {text("package_breadth", "Breadth (cm)", { type: "number", min: 1 })}
+          {text("package_height", "Height (cm)", { type: "number", min: 1 })}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 items-end">
+          {text("nimbus_subdomain", "Tracking page subdomain", { maxLength: 60, hint: "Customers track at <subdomain>.nmbus.co/track/<AWB>" })}
+          <label className="flex items-center gap-3 text-sm text-stone-700 cursor-pointer pb-2">
+            <input type="checkbox" checked={Boolean(form.auto_pickup)} onChange={set("auto_pickup")} className="w-4 h-4 accent-burgundy" />
+            Request courier pickup automatically when booking
+          </label>
+        </div>
+        <div className="mt-5"><Button type="submit" loading={saving}><Save className="w-4 h-4" /> Save shipping settings</Button></div>
+      </Section>
+    </form>
+  );
+}
+
 export default function Settings() {
   const [form, setForm] = useState(null);
   const [saved, setSaved] = useState(null);
@@ -180,6 +248,10 @@ export default function Settings() {
           <Button type="submit" loading={saving} disabled={!dirty} data-testid="settings-save"><Save className="w-4 h-4" /> Save settings</Button>
         </div>
       </form>
+
+      <div className="mt-8">
+        <ShippingCard />
+      </div>
 
       <div className="mt-8">
         <PasswordCard />

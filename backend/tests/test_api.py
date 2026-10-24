@@ -23,7 +23,7 @@ os.environ.update(JWT_SECRET=os.environ.get("JWT_SECRET", "test-secret"), RAZORP
                   RAZORPAY_KEY_SECRET="fake_secret", RAZORPAY_WEBHOOK_SECRET="whsec_fake",
                   ADMIN_EMAIL=os.environ.get("TEST_ADMIN_EMAIL", "admin@aurevia.com"),
                   ADMIN_PASSWORD=os.environ.get("TEST_ADMIN_PASSWORD", "Admin@123"),
-                  SUPABASE_URL="", SUPABASE_SERVICE_ROLE_KEY="", GOOGLE_CLIENT_ID="test-client.apps.googleusercontent.com")
+                  SUPABASE_URL="", SUPABASE_SERVICE_ROLE_KEY="", GOOGLE_CLIENT_ID="test-client.apps.googleusercontent.com", NIMBUS_EMAIL="nimbus@example.test", NIMBUS_PASSWORD="x")
 sys.path.insert(0, str(BACKEND))
 os.chdir(BACKEND)
 
@@ -54,6 +54,23 @@ async def fake_google(credential):
             "sub": f"g-{email}", "name": "Google Person", "picture": "https://example.test/p.png"}
 
 server.verify_google_credential = fake_google
+
+nimbus_calls = []
+nimbus_track = {"code": "IT"}
+
+
+async def fake_nimbus(method, path, json_body=None):
+    nimbus_calls.append((method, path, json_body))
+    if path == "/shipments":
+        return {"status": True, "data": {"order_id": 1, "shipment_id": 2, "awb_number": "5963222066", "courier_id": "5", "courier_name": "Bluedart",
+                                         "status": "booked", "label": "https://example.test/label.pdf"}}
+    if path.startswith("/shipments/track/"):
+        return {"status": True, "data": {"history": [{"status_code": nimbus_track["code"], "location": "X", "event_time": "2026-10-24 10:00", "message": "m"}]}}
+    if path == "/shipments/cancel":
+        return {"status": True, "message": "cancelled"}
+    return {"status": False, "message": "unknown"}
+
+server.nimbus_request = fake_nimbus
 sign = lambda msg, secret: hmac.new(secret.encode(), msg.encode(), hashlib.sha256).hexdigest()  # noqa: E731
 
 with TestClient(server.app) as anon:
@@ -220,6 +237,36 @@ with TestClient(server.app) as anon:
     left = cust.delete(f"/api/account/addresses/{a2['id']}").json()
     check("deleting default makes another default", len(left) == 1 and left[0]["is_default"] is True, left)
     check("addresses need sign-in", anon.get("/api/account/addresses").status_code == 401)
+
+    # Nimbus shipping
+    admin.put(f"/api/admin/products/{pid}", json={**fields, "stock": 5, "active": True})
+    on = cust.post("/api/orders", json={"customer": customer, "items": [item(1)]}).json()
+    r = admin.post(f"/api/admin/orders/{on['id']}/nimbus", json={})
+    check("nimbus needs pickup address first", r.status_code == 400 and "Settings" in r.json()["detail"], r.text)
+    ship = {"nimbus_subdomain": "aurevia", "warehouse_name": "Main", "pickup_name": "Aurevia", "pickup_address": "1 Studio Lane", "pickup_city": "Chandigarh",
+            "pickup_state": "Chandigarh", "pickup_pincode": "160022", "pickup_phone": "+91 79738 25465", "package_weight": 300}
+    check("shipping settings saved", admin.put("/api/admin/shipping", json=ship).status_code == 200)
+    check("shipping settings are admin-only", cust.get("/api/admin/shipping").status_code == 403)
+    r = admin.post(f"/api/admin/orders/{on['id']}/nimbus", json={"package_weight": 450})
+    o = r.json()
+    sent = nimbus_calls[-1][2]
+    check("nimbus shipment booked", r.status_code == 200 and o["tracking_number"] == "5963222066" and o["nimbus"]["courier_name"] == "Bluedart"
+          and o["status"] == "processing" and o["tracking_url"] == "https://aurevia.nmbus.co/track/5963222066", r.text)
+    check("nimbus payload correct", sent["payment_type"] == "cod" and sent["order_amount"] == on["total"] and sent["package_weight"] == 450
+          and sent["consignee"]["pincode"] == customer["zip"] and sent["consignee"]["phone"] == "9876543210" and sent["pickup"]["phone"] == "7973825465"
+          and sent["order_items"][0]["qty"] == "1", sent)
+    check("nimbus no double booking", admin.post(f"/api/admin/orders/{on['id']}/nimbus", json={}).status_code == 409)
+    o = admin.post(f"/api/admin/orders/{on['id']}/nimbus/sync").json()
+    check("nimbus in transit -> shipped", o["status"] == "shipped" and o["nimbus"]["status_text"] == "In transit", o.get("nimbus"))
+    nimbus_track["code"] = "DL"
+    o = admin.post(f"/api/admin/orders/{on['id']}/nimbus/sync").json()
+    check("nimbus delivered -> delivered + COD paid", o["status"] == "delivered" and o["payment_status"] == "paid", o.get("status"))
+    check("customer sees tracking link", anon.post("/api/orders/track", json={"number": on["number"], "email": email}).json()["tracking_url"].endswith("5963222066"))
+    on2 = cust.post("/api/orders", json={"customer": customer, "items": [item(1)]}).json()
+    admin.post(f"/api/admin/orders/{on2['id']}/nimbus", json={})
+    o = admin.patch(f"/api/admin/orders/{on2['id']}", json={"status": "cancelled"}).json()
+    check("cancelling order cancels nimbus shipment", o["tracking_number"] == "" and o["nimbus"]["cancelled_awb"] == "5963222066"
+          and nimbus_calls[-1][1] == "/shipments/cancel", o.get("nimbus"))
 
     # Google sign-in
     check("google provider advertised", anon.get("/api/auth/providers").json()["google_client_id"] == "test-client.apps.googleusercontent.com")

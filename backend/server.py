@@ -10,6 +10,7 @@ import contextvars
 import os
 import re
 import json
+import time
 import uuid
 import logging
 import bcrypt
@@ -1449,6 +1450,15 @@ async def admin_update_order(order_id: str, input_data: OrderUpdateInput, admin:
             raise HTTPException(status_code=400, detail="This online order hasn't been paid yet, so it can't be fulfilled.")
         if new_status == "cancelled":
             await restock(order["items"])
+            awb = order.get("nimbus", {}).get("awb")
+            if awb and nimbus_enabled():
+                # Best effort: also cancel the courier booking (fails once it is picked up).
+                try:
+                    if (await nimbus_request("POST", "/shipments/cancel", {"awb": awb})).get("status"):
+                        changes.update({"nimbus": {**order["nimbus"], "awb": "", "cancelled_awb": awb, "status_text": "Shipment cancelled"},
+                                        "tracking_number": "", "tracking_url": ""})
+                except HTTPException:
+                    logger.warning(f"Could not cancel Nimbus shipment {awb} for order {order['number']}")
         changes["status"] = new_status
         push = {"status": new_status, "at": ts, "by": admin["email"]}
         # Cash on delivery is collected when the parcel is delivered.
@@ -1462,6 +1472,228 @@ async def admin_update_order(order_id: str, input_data: OrderUpdateInput, admin:
     if push:
         update["$push"] = {"history": push}
     await db.orders.update_one({"id": order_id}, update)
+    return await db.orders.find_one({"id": order_id}, {"_id": 0})
+
+
+# ---------- Shipping: NimbusPost ----------
+# Admin books a courier for an order; Nimbus returns the AWB, courier and label. API: api.nimbuspost.com/v1.
+
+NIMBUS_API = "https://api.nimbuspost.com/v1"
+NIMBUS_EMAIL = os.environ.get("NIMBUS_EMAIL", "").strip()
+NIMBUS_PASSWORD = os.environ.get("NIMBUS_PASSWORD", "").strip()
+_nimbus_token = {"value": None, "at": 0.0}
+
+SHIPPING_DEFAULTS = {
+    "nimbus_subdomain": "aurevia",          # tracking pages live at <subdomain>.nmbus.co/track/<awb>
+    "warehouse_name": "", "pickup_name": "", "pickup_address": "", "pickup_address_2": "",
+    "pickup_city": "", "pickup_state": "", "pickup_pincode": "", "pickup_phone": "",
+    "package_weight": 250, "package_length": 15, "package_breadth": 12, "package_height": 6,
+    "auto_pickup": True,
+}
+
+# Nimbus tracking codes -> our order status.
+NIMBUS_STATUS = {"IT": "shipped", "OFD": "shipped", "DL": "delivered"}
+NIMBUS_LABELS = {"PP": "Pending pickup", "IT": "In transit", "EX": "Exception", "OFD": "Out for delivery", "DL": "Delivered",
+                 "RT": "Returning to origin (RTO)", "RT-IT": "RTO in transit", "RT-DL": "RTO delivered"}
+
+
+def nimbus_enabled() -> bool:
+    return bool(NIMBUS_EMAIL and NIMBUS_PASSWORD)
+
+
+class ShippingSettingsInput(BaseModel):
+    nimbus_subdomain: str = Field(default="", max_length=60)
+    warehouse_name: str = Field(default="", max_length=20)
+    pickup_name: str = Field(default="", max_length=200)
+    pickup_address: str = Field(default="", max_length=200)
+    pickup_address_2: str = Field(default="", max_length=200)
+    pickup_city: str = Field(default="", max_length=40)
+    pickup_state: str = Field(default="", max_length=40)
+    pickup_pincode: str = Field(default="", max_length=6)
+    pickup_phone: str = Field(default="", max_length=16)
+    package_weight: int = Field(default=250, ge=1, le=50000)
+    package_length: int = Field(default=15, ge=1, le=500)
+    package_breadth: int = Field(default=12, ge=1, le=500)
+    package_height: int = Field(default=6, ge=1, le=500)
+    auto_pickup: bool = True
+
+
+async def get_shipping_settings() -> dict:
+    doc = await db.settings.find_one({"_id": "shipping"}, {"_id": 0}) or {}
+    return {**SHIPPING_DEFAULTS, **doc}
+
+
+@api_router.get("/admin/shipping")
+async def admin_shipping_settings(admin: dict = Depends(require_admin)):
+    return {**await get_shipping_settings(), "nimbus_connected": nimbus_enabled()}
+
+
+@api_router.put("/admin/shipping")
+async def admin_update_shipping(input_data: ShippingSettingsInput, admin: dict = Depends(require_admin)):
+    doc = {k: v.strip() if isinstance(v, str) else v for k, v in input_data.model_dump().items()}
+    if doc["pickup_pincode"] and not re.match(r"^[1-9][0-9]{5}$", doc["pickup_pincode"]):
+        raise HTTPException(status_code=422, detail="Pickup PIN code must be 6 digits.")
+    await db.settings.update_one({"_id": "shipping"}, {"$set": doc}, upsert=True)
+    return {**await get_shipping_settings(), "nimbus_connected": nimbus_enabled()}
+
+
+async def nimbus_request(method: str, path: str, json_body: Optional[dict] = None) -> dict:
+    """Calls Nimbus with a cached login token, logging in again once if it has expired."""
+    if not nimbus_enabled():
+        raise HTTPException(status_code=503, detail="Nimbus is not connected yet. Add NIMBUS_EMAIL and NIMBUS_PASSWORD on the server.")
+    for attempt in range(2):
+        if not _nimbus_token["value"] or time.time() - _nimbus_token["at"] > 2 * 3600:
+            try:
+                async with httpx.AsyncClient(timeout=20) as http:
+                    r = await http.post(f"{NIMBUS_API}/users/login", json={"email": NIMBUS_EMAIL, "password": NIMBUS_PASSWORD})
+                body = r.json()
+            except (httpx.HTTPError, ValueError):
+                raise HTTPException(status_code=502, detail="Could not reach Nimbus to log in. Please try again.")
+            if not body.get("status"):
+                raise HTTPException(status_code=502, detail=f"Nimbus login failed: {body.get('message') or r.status_code}. Check NIMBUS_EMAIL / NIMBUS_PASSWORD.")
+            _nimbus_token.update(value=body["data"], at=time.time())
+        try:
+            async with httpx.AsyncClient(timeout=30) as http:
+                r = await http.request(method, f"{NIMBUS_API}{path}", json=json_body, headers={"Authorization": f"Bearer {_nimbus_token['value']}"})
+        except httpx.HTTPError:
+            raise HTTPException(status_code=502, detail="Could not reach Nimbus. Please try again.")
+        if r.status_code == 401 and attempt == 0:
+            _nimbus_token["value"] = None
+            continue
+        try:
+            return r.json()
+        except ValueError:
+            raise HTTPException(status_code=502, detail=f"Nimbus returned an unexpected response ({r.status_code}).")
+    raise HTTPException(status_code=502, detail="Nimbus rejected the login token.")
+
+
+def _ten_digits(phone: str) -> str:
+    return re.sub(r"\D", "", phone or "")[-10:]
+
+
+def nimbus_tracking_url(settings: dict, awb: str) -> str:
+    sub = (settings.get("nimbus_subdomain") or "").strip()
+    return f"https://{sub}.nmbus.co/track/{awb}" if sub else f"https://app.nimbuspost.com/track/{awb}"
+
+
+class NimbusShipInput(BaseModel):
+    package_weight: Optional[int] = Field(default=None, ge=1, le=50000)
+    package_length: Optional[int] = Field(default=None, ge=1, le=500)
+    package_breadth: Optional[int] = Field(default=None, ge=1, le=500)
+    package_height: Optional[int] = Field(default=None, ge=1, le=500)
+    courier_id: Optional[str] = Field(default=None, max_length=10)
+
+
+def build_nimbus_shipment(order: dict, s: dict, pkg: NimbusShipInput) -> dict:
+    c = order["customer"]
+    cod = order["payment_method"] == "cod" and order["payment_status"] != "paid"
+    payload = {
+        "order_number": order["number"][:20],
+        "payment_type": "cod" if cod else "prepaid",
+        "order_amount": round(order["total"], 2),
+        "shipping_charges": round(order.get("shipping", 0), 2),
+        "discount": round(order.get("discount", 0), 2),
+        "cod_charges": 0,
+        "package_weight": pkg.package_weight or s["package_weight"],
+        "package_length": pkg.package_length or s["package_length"],
+        "package_breadth": pkg.package_breadth or s["package_breadth"],
+        "package_height": pkg.package_height or s["package_height"],
+        "request_auto_pickup": "yes" if s.get("auto_pickup", True) else "no",
+        "consignee": {
+            "name": f"{c['first_name']} {c['last_name']}".strip()[:200], "address": c["address"][:200], "address_2": "",
+            "city": c["city"][:40], "state": (c.get("state") or "")[:40], "pincode": c["zip"], "phone": _ten_digits(c.get("phone")),
+        },
+        "pickup": {
+            "warehouse_name": s["warehouse_name"], "name": s["pickup_name"], "address": s["pickup_address"], "address_2": s.get("pickup_address_2", ""),
+            "city": s["pickup_city"], "state": s["pickup_state"], "pincode": s["pickup_pincode"], "phone": _ten_digits(s["pickup_phone"]),
+        },
+        "order_items": [{"name": i["name"][:200], "qty": str(i["quantity"]), "price": str(i["price"]), "sku": i["product_id"]} for i in order["items"]],
+        "is_insurance": "0",
+        "tags": "aurevia",
+    }
+    if pkg.courier_id:
+        payload["courier_id"] = pkg.courier_id
+    return payload
+
+
+@api_router.post("/admin/orders/{order_id}/nimbus")
+async def ship_with_nimbus(order_id: str, input_data: NimbusShipInput, admin: dict = Depends(require_admin)):
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order["status"] == "cancelled":
+        raise HTTPException(status_code=400, detail="This order is cancelled.")
+    if order.get("nimbus", {}).get("awb"):
+        raise HTTPException(status_code=409, detail=f"Already booked with Nimbus (AWB {order['nimbus']['awb']}). Cancel that shipment first to book again.")
+    if order["payment_method"] == "razorpay" and order["payment_status"] != "paid":
+        raise HTTPException(status_code=400, detail="This online order has not been paid yet, so it can't be shipped.")
+    s = await get_shipping_settings()
+    required = (("warehouse_name", "warehouse name"), ("pickup_name", "contact name"), ("pickup_address", "address"),
+                ("pickup_city", "city"), ("pickup_state", "state"), ("pickup_pincode", "PIN code"), ("pickup_phone", "phone"))
+    missing = [label for key, label in required if not s.get(key)]
+    if missing:
+        raise HTTPException(status_code=400, detail=f"Fill in your pickup {', '.join(missing)} in Settings → Shipping first.")
+    body = await nimbus_request("POST", "/shipments", build_nimbus_shipment(order, s, input_data))
+    if not body.get("status"):
+        raise HTTPException(status_code=400, detail=f"Nimbus: {(body.get('message') or 'could not create the shipment').strip()}")
+    d = body["data"]
+    ts = now_iso()
+    nimbus = {"awb": str(d.get("awb_number", "")), "courier_name": d.get("courier_name", ""), "courier_id": str(d.get("courier_id", "")),
+              "shipment_id": d.get("shipment_id"), "order_id": d.get("order_id"), "label": d.get("label", ""), "manifest": d.get("manifest", ""),
+              "status_code": "PP", "status_text": NIMBUS_LABELS["PP"], "booked_at": ts}
+    changes = {"nimbus": nimbus, "tracking_number": nimbus["awb"], "tracking_url": nimbus_tracking_url(s, nimbus["awb"]),
+               "courier": nimbus["courier_name"], "updated_at": ts}
+    if order["status"] == "pending":
+        changes["status"] = "processing"
+    entry = {"status": changes.get("status", order["status"]), "at": ts,
+             "by": f"{admin['email']} · Nimbus booked {nimbus['courier_name']} (AWB {nimbus['awb']})"}
+    await db.orders.update_one({"id": order_id}, {"$set": changes, "$push": {"history": entry}})
+    return await db.orders.find_one({"id": order_id}, {"_id": 0})
+
+
+@api_router.post("/admin/orders/{order_id}/nimbus/sync")
+async def sync_nimbus(order_id: str, admin: dict = Depends(require_admin)):
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    awb = (order or {}).get("nimbus", {}).get("awb")
+    if not awb:
+        raise HTTPException(status_code=404, detail="This order has no Nimbus shipment.")
+    body = await nimbus_request("GET", f"/shipments/track/{awb}")
+    if not body.get("status"):
+        raise HTTPException(status_code=400, detail=f"Nimbus: {body.get('message') or 'no tracking yet'}")
+    history = body["data"].get("history") or []
+    code = history[0].get("status_code") if history else order["nimbus"].get("status_code", "PP")
+    ts = now_iso()
+    # Whole sub-document, not dotted paths: the Postgres store only sets top-level fields.
+    nimbus = {**order["nimbus"], "status_code": code, "status_text": NIMBUS_LABELS.get(code, code), "history": history[:30], "synced_at": ts}
+    changes = {"nimbus": nimbus, "updated_at": ts}
+    update = {"$set": changes}
+    target = NIMBUS_STATUS.get(code)
+    current = ORDER_STATUSES.index(order["status"]) if order["status"] in ORDER_STATUSES else 0
+    # Only move forward (never undo an admin's later status), and never reopen a cancelled order.
+    if target and order["status"] != "cancelled" and ORDER_STATUSES.index(target) > current:
+        changes["status"] = target
+        if target == "delivered" and order["payment_method"] == "cod":
+            changes["payment_status"] = "paid"
+        update["$push"] = {"history": {"status": target, "at": ts, "by": f"Nimbus: {NIMBUS_LABELS.get(code, code)}"}}
+    await db.orders.update_one({"id": order_id}, update)
+    return await db.orders.find_one({"id": order_id}, {"_id": 0})
+
+
+@api_router.post("/admin/orders/{order_id}/nimbus/cancel")
+async def cancel_nimbus(order_id: str, admin: dict = Depends(require_admin)):
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    awb = (order or {}).get("nimbus", {}).get("awb")
+    if not awb:
+        raise HTTPException(status_code=404, detail="This order has no Nimbus shipment.")
+    body = await nimbus_request("POST", "/shipments/cancel", {"awb": awb})
+    if not body.get("status"):
+        raise HTTPException(status_code=400, detail=f"Nimbus: {body.get('message') or 'unable to cancel'} (it may already be picked up).")
+    ts = now_iso()
+    nimbus = {**order["nimbus"], "awb": "", "cancelled_awb": awb, "status_text": "Shipment cancelled"}
+    await db.orders.update_one({"id": order_id}, {
+        "$set": {"nimbus": nimbus, "tracking_number": "", "tracking_url": "", "courier": "", "updated_at": ts},
+        "$push": {"history": {"status": order["status"], "at": ts, "by": f"{admin['email']} · Nimbus shipment {awb} cancelled"}},
+    })
     return await db.orders.find_one({"id": order_id}, {"_id": 0})
 
 
@@ -1677,7 +1909,7 @@ async def health():
     return {
         "database": DB_BACKEND,
         "image_storage": "supabase" if USE_SUPABASE_STORAGE else "local-disk",
-        "jwt_secret_set": bool(os.environ.get("JWT_SECRET", "").strip()), "google_sign_in": bool(GOOGLE_CLIENT_ID),
+        "jwt_secret_set": bool(os.environ.get("JWT_SECRET", "").strip()), "google_sign_in": bool(GOOGLE_CLIENT_ID), "nimbus_connected": nimbus_enabled(),
         "admin_password_set": bool(os.environ.get("ADMIN_PASSWORD")),
         "razorpay_enabled": razorpay_enabled(),
         "cookie_secure": COOKIE_SECURE,

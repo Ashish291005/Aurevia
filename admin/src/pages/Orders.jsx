@@ -7,6 +7,7 @@ import { useAdminData } from "../AdminData";
 import { money, formatDate, timeAgo, ORDER_STATUSES, STATUS_META, NEXT_STATUS, downloadCsv } from "../lib/format";
 import { Card, PageHeader, StatusBadge, PaymentBadge, EmptyState, SearchInput, Button, ConfirmDialog, Drawer, Select } from "../components/ui";
 import { Input } from "../components/Input";
+import NimbusCard from "../components/NimbusCard";
 
 function OrderDrawer({ order, onClose, onUpdated }) {
   const [tracking, setTracking] = useState(order.tracking_number || "");
@@ -79,6 +80,8 @@ function OrderDrawer({ order, onClose, onUpdated }) {
           {final && <p className="text-xs text-stone-500 mt-3">Cancelled orders are final; stock was returned to inventory.</p>}
           {order.status === "delivered" && <p className="text-xs text-stone-500 mt-3">Delivered. For a return, set the status to Cancelled (items go back to stock) and mark the payment Refunded.</p>}
         </Card>
+
+        <NimbusCard order={order} onUpdated={onUpdated} />
 
         <Card className="p-4">
           <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Items</h3>
