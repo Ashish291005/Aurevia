@@ -12,7 +12,7 @@ const fadeUp = { initial: { opacity: 0, y: 30 }, whileInView: { opacity: 1, y: 0
 const VALUES = [
   { Icon: Sparkles, title: "Fine-jewellery look", desc: "Gold, rose-gold and rhodium plating with American Diamond, kundan and crystal stones, so every piece looks far more expensive than it is." },
   { Icon: ShieldCheck, title: "Skin-friendly & anti-tarnish", desc: "Nickel- and lead-free bases with an anti-tarnish coat. Kind to sensitive skin and made to keep their shine." },
-  { Icon: Gift, title: "Gift-ready, always", desc: "Every order arrives in our signature box with a note card, free of charge. Curated gift boxes take the guesswork out of gifting." },
+  { Icon: Gift, title: "Gift-ready, always", desc: "Every order is packed with care, ready to give. Curated gift boxes take the guesswork out of gifting." },
   { Icon: HeartHandshake, title: "Honest pricing", desc: "We're a fashion jewellery brand, not a fine jeweller, and we say so. Designs start at ₹449, so you can gift often and gift well." },
 ];
 

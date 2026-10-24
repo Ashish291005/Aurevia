@@ -123,7 +123,7 @@ export default function Offers() {
         {items === null ? (
           <p className="py-16 text-center text-sm text-stone-500">Loading offers...</p>
         ) : items.length === 0 ? (
-          <EmptyState icon={BadgePercent} title="No offers yet" text="Create a coupon like WELCOME10 or an announcement like free gift wrapping."
+          <EmptyState icon={BadgePercent} title="No offers yet" text="Create a coupon like WELCOME10 or an announcement like free shipping above ₹999."
             action={<Button onClick={() => open(null)}><Plus className="w-4 h-4" /> Add offer</Button>} />
         ) : (
           <ul className="divide-y divide-stone-100">
@@ -163,7 +163,7 @@ export default function Offers() {
           <Card className="p-4 space-y-3">
             <label className="block"><Label hint="shown with a copy button and T&C">Coupon to show</Label>
               <Select value={form.code} onChange={pickCoupon} className="w-full" data-testid="offer-code"
-                options={[{ value: "", label: "None: announcement only (e.g. free gift wrapping)" },
+                options={[{ value: "", label: "None: announcement only (e.g. free shipping above ₹999)" },
                   ...coupons.map(c => ({ value: c.code, label: `${c.code} · ${c.description || couponSummary(c)}${couponStatus(c) !== "Active" ? ` (${couponStatus(c).toLowerCase()})` : ""}` }))]} /></label>
             {form.code && couponFor(form.code) && (
               <p className="text-xs text-stone-500 bg-stone-50 rounded px-3 py-2">Rules: <strong>{couponSummary(couponFor(form.code))}</strong></p>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Send, ShieldCheck, Gift, Truck, RotateCcw, Banknote } from "lucide-react";
+import { ArrowRight, Send, ShieldCheck, Lock, Truck, RotateCcw, Banknote } from "lucide-react";
 import { toast } from "sonner";
 import HeroCarousel from "../components/home/HeroCarousel";
 import CategoryTiles from "../components/home/CategoryTiles";
@@ -35,7 +35,7 @@ function TrustStrip() {
   const { free_shipping_threshold, shipping_fee } = useSettings();
   const items = [
     { Icon: ShieldCheck, title: "Anti-tarnish & skin-safe", text: "Nickel & lead free" },
-    { Icon: Gift, title: "Free gift wrapping", text: "With a note card" },
+    { Icon: Lock, title: "Secure payments", text: "UPI, cards & netbanking" },
     { Icon: Truck, title: shipping_fee <= 0 ? "Free shipping" : `Free shipping over ${formatPrice(free_shipping_threshold)}`, text: "Across India" },
     { Icon: Banknote, title: "Cash on delivery", text: "Pay when it arrives" },
     { Icon: RotateCcw, title: "Easy 7-day returns", text: "No questions asked" },
@@ -73,7 +73,7 @@ function BrandStory() {
             so you get the shine of fine jewellery without the fine-jewellery price.
           </p>
           <p className="font-body text-stone-600 leading-relaxed mb-8">
-            Every design is anti-tarnish coated, nickel-free and arrives gift-ready in our signature box, making it
+            Every design is anti-tarnish coated, nickel-free and is packed with care, making it
             easy to celebrate birthdays, anniversaries, Raksha Bandhan, Diwali — or just a Tuesday.
           </p>
           <Link to="/about" className="inline-flex items-center gap-3 border border-burgundy text-burgundy hover:bg-burgundy hover:text-white px-8 py-4 text-xs tracking-[0.2em] uppercase font-body font-semibold transition-colors">

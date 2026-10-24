@@ -78,7 +78,7 @@ const POLICIES = {
       ]],
       ["Tracking", "When your order ships we add the courier tracking number to it. You can follow your order any time on the Track Order page or in My Account → Orders."],
       ["Cash on delivery", "Cash on delivery is available across India. Please keep the exact amount ready; our courier partners may not carry change."],
-      ["Packaging", "Every order arrives in our signature gift box with a note card, at no extra cost."],
+      ["Packaging", "Every order is packed securely to keep your jewellery safe in transit."],
       ["Questions", `Write to ${s.store_email}${s.store_phone ? ` or call ${s.store_phone}` : ""} and we will help.`],
     ],
   },

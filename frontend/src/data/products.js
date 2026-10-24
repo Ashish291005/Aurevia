@@ -974,7 +974,7 @@ export const fallbackStorefront = {
       "id": "fs0",
       "image": "/images/hero/hero-3.webp",
       "title": "Jewellery that says it for you",
-      "subtitle": "Anti-tarnish, skin-friendly pieces from ₹449, gift-wrapped free",
+      "subtitle": "Anti-tarnish, skin-friendly pieces from ₹449",
       "cta_text": "Shop Now",
       "cta_link": "/shop"
     },
@@ -1061,20 +1061,6 @@ export const fallbackStorefront = {
       "image": "/images/brand/jewelry-box-bg.webp",
       "cta_text": "Shop Gift Boxes",
       "cta_link": "/shop?category=Gift%20Boxes",
-      "show_popup": false,
-      "show_banner": true
-    },
-    {
-      "id": "fo2",
-      "title": "Free gift wrapping on every order",
-      "description": "Every piece arrives in our signature box with a handwritten note card.",
-      "code": "",
-      "discount_type": "none",
-      "discount_value": 0,
-      "min_order": 0,
-      "image": "",
-      "cta_text": "Find a Gift",
-      "cta_link": "/shop?for=her",
       "show_popup": false,
       "show_banner": true
     }

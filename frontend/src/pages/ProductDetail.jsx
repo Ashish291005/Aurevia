@@ -182,7 +182,7 @@ function ProductView({ product }) {
                     : threshold > 0
                       ? `Complimentary shipping on orders over ${formatPrice(threshold)}; otherwise ${formatPrice(settings.shipping_fee)}.`
                       : `Flat-rate shipping of ${formatPrice(settings.shipping_fee)}.`}
-                  {" "}Delivered across India in 3–7 working days, with cash on delivery available. Every order is gift-wrapped free with a note card.
+                  {" "}Delivered across India in 3–7 working days, with cash on delivery available.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="guarantee" className="border-stone-200">

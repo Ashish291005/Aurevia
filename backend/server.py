@@ -548,7 +548,7 @@ async def submit_contact(input_data: ContactInput):
 
 DEFAULT_SETTINGS = {
     "announcement_enabled": True,
-    "announcement_text": "Free shipping on orders above ₹999 · Free gift wrapping on every order",
+    "announcement_text": "Free shipping on orders above ₹999 · Cash on delivery across India",
     "shipping_fee": 79.0,
     "free_shipping_threshold": 999.0,
     "store_email": "hello@aurevia.in",
@@ -558,7 +558,7 @@ DEFAULT_SETTINGS = {
     "facebook_url": "",
     "twitter_url": "",
     "whatsapp_number": "",
-    "ticker_messages": ["Anti-tarnish & skin-safe", "Free gift wrapping on every order", "Cash on delivery across India", "Easy 7-day returns"],
+    "ticker_messages": ["Anti-tarnish & skin-safe", "Cash on delivery across India", "Easy 7-day returns"],
 }
 
 
@@ -1772,7 +1772,7 @@ async def seed_storefront():
         ])
     if await db.slides.count_documents({}) == 0:
         slides = [
-            ("Jewellery that says it for you", "Anti-tarnish, skin-friendly pieces from ₹449, gift-wrapped free", "Shop Now", "/shop"),
+            ("Jewellery that says it for you", "Anti-tarnish, skin-friendly pieces from ₹449", "Shop Now", "/shop"),
             ("The Festive Edit", "Kundan, temple & AD sets for weddings, sangeet and celebrations", "Explore Necklaces", "/shop?category=Necklaces"),
             ("Gift boxes, ready to wow", "Curated sets in keepsake boxes with a handwritten note", "Shop Gift Boxes", "/shop?category=Gift%20Boxes"),
             ("Stack. Mix. Shine.", "Everyday rings and bracelets under ₹999", "Shop Bracelets", "/shop?category=Bracelets"),
@@ -1787,8 +1787,6 @@ async def seed_storefront():
                  discount_type="percent", discount_value=10, min_order=499, image=media["popup"], cta_text="Start Shopping", cta_link="/shop", show_popup=True, show_banner=True),
             dict(title="Flat ₹200 off on gift boxes & more", description="On orders above ₹1,999 with code GIFT200, made for festive gifting.", code="GIFT200",
                  discount_type="flat", discount_value=200, min_order=1999, image=media["gift_banner"], cta_text="Shop Gift Boxes", cta_link="/shop?category=Gift%20Boxes", show_popup=False, show_banner=True, ends_at=(now_utc() + timedelta(days=5)).isoformat()),
-            dict(title="Free gift wrapping on every order", description="Every piece arrives in our signature box with a handwritten note card.", code="",
-                 discount_type="none", discount_value=0, min_order=0, image="", cta_text="Find a Gift", cta_link="/shop?for=her", show_popup=False, show_banner=True),
         ]
         await db.offers.insert_many([{**o, "id": uuid.uuid4().hex, "active": True, "position": i, "created_at": ts} for i, o in enumerate(offers)])
 
