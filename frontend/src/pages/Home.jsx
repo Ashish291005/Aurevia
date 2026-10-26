@@ -68,8 +68,8 @@ function BrandStory() {
           <p className="text-[11px] tracking-[0.2em] uppercase font-semibold text-gold font-body mb-3">Why Aurevia</p>
           <h2 className="font-heading text-3xl sm:text-4xl text-stone-900 mb-5 leading-snug">The look of fine jewellery, at a price you'll love to gift</h2>
           <p className="font-body text-stone-600 leading-relaxed mb-4">
-            Aurevia is a fashion jewellery label. Our pieces are crafted in brass and stainless steel, finished with
-            gold, rose-gold and rhodium plating, and set with American Diamond (AD), kundan and crystal stones —
+            Aurevia is a fashion jewellery label. Our pieces are crafted in brass and stainless steel, finished in
+            polished yellow, rose and silver tones, and set with American Diamond (AD) and crystal stones —
             so you get the shine of fine jewellery without the fine-jewellery price.
           </p>
           <p className="font-body text-stone-600 leading-relaxed mb-8">

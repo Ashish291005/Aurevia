@@ -53,7 +53,7 @@ export default function SearchOverlay({ open, onClose }) {
               data-testid="search-input"
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Search rings, necklaces, gold..."
+              placeholder="Search rings, necklaces, bangles..."
               className="flex-1 bg-transparent py-4 text-lg font-body outline-none placeholder:text-stone-400"
             />
             <button type="button" onClick={onClose} aria-label="Close search" className="p-2 text-stone-500 hover:text-burgundy">

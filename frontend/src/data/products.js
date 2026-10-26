@@ -11,7 +11,7 @@ export const products = [
       "/images/pendants/pendant-set-01.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "18 inch chain"
@@ -28,12 +28,12 @@ export const products = [
     "price": 749,
     "compare_at_price": 1099,
     "category": "Necklaces",
-    "description": "A rose-gold marquise pendant edged with sparkling stones, paired with solitaire studs. Anti-tarnish coated, nickel-free and skin-friendly.",
+    "description": "A rose-tone marquise pendant edged with sparkling stones, paired with solitaire studs. Anti-tarnish coated, nickel-free and skin-friendly.",
     "images": [
       "/images/pendants/pendant-set-02.webp"
     ],
     "materials": [
-      "Rose gold-plated"
+      "Rose finish"
     ],
     "sizes": [
       "18 inch chain"
@@ -55,7 +55,7 @@ export const products = [
       "/images/pendants/pendant-set-03.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "18 inch chain"
@@ -77,7 +77,7 @@ export const products = [
       "/images/pendants/pendant-set-04.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "18 inch chain"
@@ -94,12 +94,12 @@ export const products = [
     "price": 549,
     "compare_at_price": 799,
     "category": "Bracelets",
-    "description": "Two fine chain bracelets, one with a heart and beads, one with a single gold bead. Wear together or share one. Anti-tarnish coated, nickel-free and skin-friendly.",
+    "description": "Two fine chain bracelets, one with a heart and beads, one with a single polished bead. Wear together or share one. Anti-tarnish coated, nickel-free and skin-friendly.",
     "images": [
       "/images/pendants/pendant-set-05.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -122,7 +122,7 @@ export const products = [
       "/images/pendants/pendant-set-06.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "18 inch chain"
@@ -144,7 +144,7 @@ export const products = [
       "/images/pendants/pendant-set-07.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "One size"
@@ -166,7 +166,7 @@ export const products = [
       "/images/pendants/pendant-set-08.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "18 inch chain"
@@ -188,7 +188,7 @@ export const products = [
       "/images/pendants/pendant-set-09.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "18 inch chain"
@@ -210,7 +210,7 @@ export const products = [
       "/images/pendants/pendant-set-10.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "18 inch chain"
@@ -233,7 +233,7 @@ export const products = [
       "/images/pendants/pendant-set-11.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "18 inch chain"
@@ -256,7 +256,7 @@ export const products = [
       "/images/pendants/pendant-set-12.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "16-20 inch layers"
@@ -278,7 +278,7 @@ export const products = [
       "/images/bangles/bangle-01.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -300,7 +300,7 @@ export const products = [
       "/images/bangles/bangle-02.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -322,7 +322,7 @@ export const products = [
       "/images/bangles/bangle-03.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable (set of 2)"
@@ -344,7 +344,7 @@ export const products = [
       "/images/bangles/bangle-04.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -366,7 +366,7 @@ export const products = [
       "/images/bangles/bangle-05.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable (set of 2)"
@@ -389,7 +389,7 @@ export const products = [
       "/images/bangles/bangle-06.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -412,7 +412,7 @@ export const products = [
       "/images/bangles/bangle-07.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Free size"
@@ -434,7 +434,7 @@ export const products = [
       "/images/bangles/bangle-08.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -456,7 +456,7 @@ export const products = [
       "/images/bangles/bangle-09.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -479,7 +479,7 @@ export const products = [
       "/images/bangles/bangle-10.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -501,7 +501,7 @@ export const products = [
       "/images/bangles/bangle-11.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -524,7 +524,7 @@ export const products = [
       "/images/bangles/bangle-12.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -546,7 +546,7 @@ export const products = [
       "/images/bangles/bangle-13.webp"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -570,8 +570,8 @@ export const products = [
       "https://images.unsplash.com/photo-1708222169835-6329be77bee6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
     ],
     "materials": [
-      "Gold-plated",
-      "Rose gold-plated"
+      "Yellow finish",
+      "Rose finish"
     ],
     "sizes": [
       "Adjustable"
@@ -594,7 +594,7 @@ export const products = [
       "https://images.unsplash.com/photo-1708222169741-dc9616cfdb83?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHw0fHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
     ],
     "materials": [
-      "Gold-plated",
+      "Yellow finish",
       "Silver-tone"
     ],
     "sizes": [
@@ -618,8 +618,8 @@ export const products = [
       "https://images.unsplash.com/photo-1708222169741-dc9616cfdb83?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHw0fHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
     ],
     "materials": [
-      "Rose gold-plated",
-      "Gold-plated"
+      "Rose finish",
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -642,7 +642,7 @@ export const products = [
       "https://images.unsplash.com/photo-1708222169835-6329be77bee6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwZ29sZCUyMHJpbmclMjBsdXh1cnklMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzc1OTgxNjQ2fDA&ixlib=rb-4.1.0&q=80&w=1000"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Adjustable"
@@ -665,7 +665,7 @@ export const products = [
       "https://images.unsplash.com/photo-1627293509201-cd0c780043e6?w=1000&q=80"
     ],
     "materials": [
-      "Gold-plated",
+      "Yellow finish",
       "Two-tone"
     ],
     "sizes": [
@@ -712,7 +712,7 @@ export const products = [
       "https://images.unsplash.com/photo-1771173652661-8245a9d94095?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwyfHxkaWFtb25kJTIwZWFycmluZ3MlMjBsdXh1cnklMjBnb2xkfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
     ],
     "materials": [
-      "Gold-plated",
+      "Yellow finish",
       "Silver-tone"
     ],
     "sizes": [
@@ -726,7 +726,7 @@ export const products = [
   },
   {
     "id": "earring-002",
-    "name": "Golden Hoop Earrings",
+    "name": "Classic Hoop Earrings",
     "price": 599,
     "compare_at_price": null,
     "category": "Earrings",
@@ -736,7 +736,7 @@ export const products = [
       "https://images.unsplash.com/photo-1771173652661-8245a9d94095?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwyfHxkaWFtb25kJTIwZWFycmluZ3MlMjBsdXh1cnklMjBnb2xkfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "Small",
@@ -783,7 +783,7 @@ export const products = [
       "https://images.unsplash.com/photo-1769151591224-2eee6793b885?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwzfHxkaWFtb25kJTIwZWFycmluZ3MlMjBsdXh1cnklMjBnb2xkfGVufDB8fHx8MTc3NTk4MTg1MHww&ixlib=rb-4.1.0&q=80&w=1000"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "One Size"
@@ -806,7 +806,7 @@ export const products = [
       "https://images.unsplash.com/photo-1617038220319-276d3cfab638?w=1000&q=80"
     ],
     "materials": [
-      "Gold-plated"
+      "Yellow finish"
     ],
     "sizes": [
       "One Size"
@@ -952,7 +952,7 @@ export const testimonials = [
   {
     "id": 2,
     "name": "Ananya R., Mumbai",
-    "text": "Wore the Kundan set to my cousin’s sangeet and got so many compliments. No one believed it was under ₹3,000.",
+    "text": "Wore the Layered Heart necklace to my cousin’s sangeet and got so many compliments. No one believed it was under ₹1,000.",
     "rating": 5
   },
   {
@@ -982,7 +982,7 @@ export const fallbackStorefront = {
       "id": "fs1",
       "image": "/images/hero/hero-1.webp",
       "title": "The Festive Edit",
-      "subtitle": "Kundan, temple & AD sets for weddings, sangeet and celebrations",
+      "subtitle": "Statement AD pendant sets for weddings, sangeet and celebrations",
       "cta_text": "Explore Necklaces",
       "cta_link": "/shop?category=Necklaces"
     },

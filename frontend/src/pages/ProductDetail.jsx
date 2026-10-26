@@ -168,8 +168,8 @@ function ProductView({ product }) {
                   <span className="flex items-center gap-2"><Gem className="w-4 h-4" /> Details</span>
                 </AccordionTrigger>
                 <AccordionContent className="font-body text-sm text-stone-600 leading-relaxed">
-                  Finish: {product.materials.join(" / ")}. Aurevia is fashion jewellery: a brass or stainless-steel base with anti-tarnish plating
-                  {" "}and AD, kundan or crystal stones. It's nickel- and lead-free and gentle on sensitive skin. Not real gold or silver.
+                  Finish: {product.materials.join(" / ")}. Aurevia is fashion jewellery: a brass or stainless-steel base with an anti-tarnish finish
+                  {" "}and AD or crystal stones. It's nickel- and lead-free and gentle on sensitive skin. Not precious metal.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="shipping" className="border-stone-200">

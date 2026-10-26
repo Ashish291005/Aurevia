@@ -98,7 +98,7 @@ export default function Homepage() {
           <label className="block"><Label hint={`${form.title.length}/80`}>Headline</Label>
             <Input value={form.title} onChange={set("title")} maxLength={80} placeholder="e.g. The Festive Edit" className="rounded-md" data-testid="slide-title" /></label>
           <label className="block"><Label hint={`${form.subtitle.length}/160`}>Subtext</Label>
-            <Input value={form.subtitle} onChange={set("subtitle")} maxLength={160} placeholder="e.g. Kundan & AD sets for weddings" className="rounded-md" /></label>
+            <Input value={form.subtitle} onChange={set("subtitle")} maxLength={160} placeholder="e.g. AD pendant sets for weddings" className="rounded-md" /></label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <label className="block"><Label>Button text</Label>
               <Input value={form.cta_text} onChange={set("cta_text")} maxLength={30} className="rounded-md" /></label>

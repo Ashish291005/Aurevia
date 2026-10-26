@@ -234,7 +234,7 @@ export default function ProductForm({ product, initial, categories, onClose, onS
             <TagInput id="pf-sizes" testId="pf-sizes" values={form.sizes} onChange={set("sizes")} placeholder="Adjustable, 2.4, 2.6 or 16 inch" />
           </Field>
           <Field label="Materials" htmlFor="pf-materials" hint="Press Enter or comma after each">
-            <TagInput id="pf-materials" testId="pf-materials" values={form.materials} onChange={set("materials")} placeholder="Gold-plated, Rose gold-plated" />
+            <TagInput id="pf-materials" testId="pf-materials" values={form.materials} onChange={set("materials")} placeholder="Yellow finish, Rose finish" />
           </Field>
 
           <div className="md:col-span-2">

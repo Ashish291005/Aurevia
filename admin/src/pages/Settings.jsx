@@ -180,7 +180,7 @@ export default function Settings() {
             <span className="text-sm text-stone-700">Show the announcement bar</span>
           </label>
           <Field label="Message" hint={`${form.announcement_text.length}/200 characters`}>
-            <Input value={form.announcement_text} onChange={set("announcement_text")} maxLength={200} placeholder="e.g. Diwali sale: 20% off kundan sets" className="rounded-md" data-testid="settings-announcement-text" />
+            <Input value={form.announcement_text} onChange={set("announcement_text")} maxLength={200} placeholder="e.g. Diwali sale: 20% off pendant sets" className="rounded-md" data-testid="settings-announcement-text" />
           </Field>
           {form.announcement_enabled && form.announcement_text.trim() && (
             <div className="mt-4">

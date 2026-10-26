@@ -2005,7 +2005,7 @@ async def seed_storefront():
     if await db.slides.count_documents({}) == 0:
         slides = [
             ("Jewellery that says it for you", "Anti-tarnish, skin-friendly pieces from ₹449", "Shop Now", "/shop"),
-            ("The Festive Edit", "Kundan, temple & AD sets for weddings, sangeet and celebrations", "Explore Necklaces", "/shop?category=Necklaces"),
+            ("The Festive Edit", "Statement AD pendant sets for weddings, sangeet and celebrations", "Explore Necklaces", "/shop?category=Necklaces"),
             ("Gift boxes, ready to wow", "Curated sets in keepsake boxes with a handwritten note", "Shop Gift Boxes", "/shop?category=Gift%20Boxes"),
             ("Stack. Mix. Shine.", "Everyday rings and bracelets under ₹999", "Shop Bracelets", "/shop?category=Bracelets"),
         ]

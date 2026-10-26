@@ -117,7 +117,7 @@ export default function Footer() {
         <div className="border-t border-white/10 mt-14 pt-8 flex flex-col sm:flex-row gap-3 justify-between text-xs text-white/40">
           <p>&copy; {new Date().getFullYear()} Aurevia. All rights reserved.</p>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-            <p>Fashion jewellery (gold-plated, AD & kundan) · Cash on delivery across India</p>
+            <p>Anti-tarnish fashion jewellery · Cash on delivery across India</p>
             {/* Full page load (not a router Link): the admin is a separate app. */}
             <a href={ADMIN_URL} data-testid="footer-admin-link"
               className="inline-flex items-center gap-1.5 self-start rounded-full border border-white/20 px-3 py-1 text-white/60 hover:text-gold hover:border-gold transition-colors">
